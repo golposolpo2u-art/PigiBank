@@ -1,0 +1,1112 @@
+```html
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hisab-Nikesh Pro</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Custom styles for smooth animations and lock screen UI */
+        .pattern-dot.active {
+            background-color: #34d399;
+            transform: scale(1.25);
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.6);
+        }
+        .bounce-in {
+            animation: bounceIn 0.3s ease-out;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.95); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen pb-20 select-none">
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast" class="fixed top-5 right-5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 z-50 hidden border border-emerald-400/30">
+        <i class="fa-solid fa-circle-check text-emerald-200"></i>
+        <span id="toast-text" class="font-semibold text-xs tracking-wide">Success Message!</span>
+    </div>
+
+    <!-- LOCK SCREEN OVERLAY -->
+    <div id="lock-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col justify-between items-center p-6 overflow-hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-950 to-slate-950 pointer-events-none"></div>
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 bg-emerald-500/10 blur-3xl rounded-full pointer-events-none"></div>
+
+        <!-- Header -->
+        <div class="z-10 text-center mt-8">
+            <div class="bg-gradient-to-tr from-emerald-400 to-indigo-500 p-3.5 rounded-3xl inline-block shadow-2xl mb-4 border border-indigo-500/30">
+                <i class="fa-solid fa-piggy-bank text-slate-950 text-3xl"></i>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-indigo-300 bg-clip-text text-transparent">
+                Hisab-Nikesh Pro
+            </h1>
+            <p class="text-slate-400 text-xs mt-1">High Security Pattern/Fingerprint Lock Enabled</p>
+        </div>
+
+        <!-- Pattern Board -->
+        <div class="z-10 flex flex-col items-center justify-center my-auto">
+            <div id="lock-feedback" class="mb-4 bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 text-xs text-center flex items-center gap-1.5 font-medium text-slate-300">
+                <i class="fa-solid fa-lock text-amber-500 animate-pulse"></i>
+                <span id="lock-feedback-text">Nijer security pattern-ti akun</span>
+            </div>
+
+            <!-- Touch ID Simulation -->
+            <div class="mb-6 flex gap-4">
+                <button onclick="handleFingerprintUnlock()" class="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-emerald-950/40 border border-emerald-400/20">
+                    <i class="fa-solid fa-fingerprint"></i>
+                    Fingerprint/TouchID Unlock
+                </button>
+            </div>
+
+            <!-- Pattern Grid -->
+            <div id="pattern-grid" class="grid grid-cols-3 gap-6 bg-slate-900/60 p-8 rounded-3xl border border-slate-800/80 shadow-2xl relative">
+                <!-- 9 Dots Generated dynamically via JS -->
+            </div>
+
+            <div class="mt-6 text-center">
+                <button onclick="triggerPatternReset()" class="text-xs text-indigo-400 hover:underline">
+                    Reset Pattern Pin
+                </button>
+            </div>
+        </div>
+
+        <div class="z-10 text-center text-slate-600 text-[10px]">
+            🔒 Secure local validation system (No Server Required)
+        </div>
+    </div>
+
+
+    <!-- MAIN APPLICATION SCREEN (Hidden by default) -->
+    <div id="main-app" class="hidden">
+        <!-- App Header -->
+        <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
+            <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="bg-gradient-to-tr from-emerald-400 to-teal-500 p-2.5 rounded-2xl shadow-lg border border-emerald-500/20">
+                        <i class="fa-solid fa-piggy-bank text-slate-950 text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+                                Hisab-Nikesh Pro
+                            </h1>
+                            <span class="text-[10px] bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold uppercase tracking-wider">
+                                Secure
+                            </span>
+                        </div>
+                        <p class="text-[10px] text-slate-400">Monthly auto-rollover active tracker</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+                    <button id="tab-current" onclick="switchTab('current')" class="px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md">
+                        Current Month
+                    </button>
+                    <button id="tab-history" onclick="switchTab('history')" class="px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750">
+                        History Archive
+                    </button>
+                    <button onclick="lockApp()" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 border border-slate-700" title="Lock App">
+                        <i class="fa-solid fa-lock"></i>
+                    </button>
+                    <button onclick="resetDataToTemplate()" class="p-2 bg-slate-800 hover:bg-rose-950/30 hover:text-rose-400 rounded-xl text-slate-400 border border-slate-700" title="Reset Default Template">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Container -->
+        <main class="max-w-6xl mx-auto px-4 mt-6">
+            
+            <!-- Tab 1: Current Month Content -->
+            <div id="content-current" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left Sidebar Cards -->
+                <div class="lg:col-span-4 flex flex-col gap-6">
+                    <!-- Salary Card -->
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl relative overflow-hidden">
+                        <div class="absolute -top-10 -right-10 w-24 h-24 bg-emerald-500/10 blur-xl rounded-full"></div>
+                        <div class="flex justify-between items-center mb-4">
+                          <h2 class="text-sm font-semibold text-slate-400 flex items-center gap-2">
+                            <i class="fa-solid fa-wallet text-emerald-400"></i>
+                            Salary Balance
+                          </h2>
+                          <button onclick="openSalaryModal()" class="text-[10px] bg-slate-800 text-emerald-400 border border-slate-700 rounded-lg px-2.5 py-1 hover:bg-slate-700">
+                            Edit Salary
+                          </button>
+                        </div>
+                        <div class="mb-2">
+                          <p class="text-3xl font-extrabold tracking-tight text-slate-100" id="current-salary-display">৳ 11,836</p>
+                          <p class="text-[10px] text-slate-400 mt-1">
+                            Mas (Month): <span class="text-indigo-400 font-bold uppercase" id="current-month-display">YYYY-MM</span>
+                          </p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-800 grid grid-cols-2 gap-2 text-center">
+                          <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+                            <p class="text-[10px] text-slate-400">Cash Flow (Demo)</p>
+                            <p class="text-sm font-bold text-amber-500" id="cash-flow-display">৳ 4,734</p>
+                          </div>
+                          <div class="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+                            <p class="text-[10px] text-slate-400">PhonePe / Online</p>
+                            <p class="text-sm font-bold text-indigo-400" id="online-flow-display">৳ 7,102</p>
+                          </div>
+                        </div>
+                    </div>
+
+                    <!-- Ledger Score Card -->
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                        <h3 class="text-sm font-bold text-slate-200 border-b border-slate-800 pb-3 mb-3">
+                          Monthly Balance Ledger Sheet
+                        </h3>
+                        <div class="space-y-3.5 text-xs text-slate-300">
+                          <div class="flex justify-between">
+                            <span class="text-slate-400">Salary Monthly:</span>
+                            <span class="font-semibold text-slate-200" id="ledger-salary">৳ 0</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-slate-400">Khorchapatir Ledger:</span>
+                            <span class="font-semibold text-rose-400" id="ledger-khorcha">- ৳ 0</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-slate-400">Dhar / Liabilities (Minus):</span>
+                            <span class="font-semibold text-amber-500" id="ledger-dhar-minus">- ৳ 0</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-slate-400">Joma / Credit Deposits (Plus):</span>
+                            <span class="font-semibold text-indigo-400" id="ledger-dhar-plus">+ ৳ 0</span>
+                          </div>
+                          <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 mt-4">
+                            <p class="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-1">Final Net Balance</p>
+                            <div class="flex items-baseline justify-between">
+                              <span class="text-2xl font-black text-emerald-400" id="ledger-net-balance">৳ 0</span>
+                              <span class="text-[9px] text-emerald-400 bg-emerald-950/40 border border-emerald-900 px-2 py-0.5 rounded-full">Actual Cash</span>
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Table Logs -->
+                <div class="lg:col-span-8 flex flex-col gap-6">
+                    <!-- Dhar Section -->
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                        <div class="mb-4">
+                            <h2 class="text-lg font-bold text-slate-200 flex items-center gap-1.5">
+                                <span class="text-amber-400">Dhar & Joma (Minus/Plus)</span>
+                            </h2>
+                            <p class="text-xs text-slate-400">Add plus transactions (Mom gave, etc) to boost net cash balance!</p>
+                        </div>
+
+                        <!-- Dhar Add Form -->
+                        <form id="dhar-form" onsubmit="addDharEntry(event)" class="bg-slate-950/60 p-4 rounded-xl border border-slate-850 grid grid-cols-1 md:grid-cols-12 gap-3 mb-6">
+                            <div class="md:col-span-4">
+                                <input id="dhar-note" type="text" placeholder="Note (E.g. Ma dilo, Dipom Vo)" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            <div class="md:col-span-2 relative">
+                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs">৳</span>
+                                <input id="dhar-amount" type="number" placeholder="Amount" required class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-6 pr-2 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-amber-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <select id="dhar-type" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 cursor-pointer focus:outline-none">
+                                    <option value="minus">Dhar (Minus)</option>
+                                    <option value="plus">Joma (Plus)</option>
+                                </select>
+                            </div>
+                            <div class="md:col-span-2">
+                                <select id="dhar-method" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 cursor-pointer focus:outline-none">
+                                    <option value="cash">Cash Mode</option>
+                                    <option value="online">PhonePe / UPI</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="md:col-span-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs py-2 px-3 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add Entry
+                            </button>
+                        </form>
+
+                        <!-- Dhar Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                                        <th class="py-2 px-1">Clear</th>
+                                        <th class="py-2 px-1">Notes</th>
+                                        <th class="py-2 px-1">Method</th>
+                                        <th class="py-2 px-1 text-right">Amount</th>
+                                        <th class="py-2 px-1 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dhar-table-body">
+                                    <!-- Dynamic rows loaded by JS -->
+                                </tbody>
+                            </table>
+                            <div id="dhar-empty-state" class="text-center py-6 text-slate-500 text-xs italic hidden">Kono transaction record nei.</div>
+                        </div>
+                    </div>
+
+                    <!-- Khorcha Section -->
+                    <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                        <div class="mb-4">
+                            <h2 class="text-lg font-bold text-slate-200 flex items-center gap-1.5">
+                                <span class="text-rose-400 font-extrabold">Khorchapatir Expense Log</span>
+                            </h2>
+                            <p class="text-xs text-slate-400">Directly deducts from your monthly net balance sheet</p>
+                        </div>
+
+                        <!-- Khorcha Form -->
+                        <form id="khorcha-form" onsubmit="addKhorchaEntry(event)" class="bg-slate-950/60 p-4 rounded-xl border border-slate-850 grid grid-cols-1 md:grid-cols-12 gap-3 mb-6">
+                            <div class="md:col-span-5">
+                                <input id="khorcha-note" type="text" placeholder="Khorchar Note (E.g. Computer Table)" required class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500">
+                            </div>
+                            <div class="md:col-span-3 relative">
+                                <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs">৳</span>
+                                <input id="khorcha-amount" type="number" placeholder="Amount" required class="w-full bg-slate-900 border border-slate-800 rounded-lg pl-6 pr-2 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-rose-500">
+                            </div>
+                            <div class="md:col-span-2">
+                                <select id="khorcha-method" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 cursor-pointer focus:outline-none">
+                                    <option value="cash">Cash Mode</option>
+                                    <option value="online">PhonePe / UPI</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="md:col-span-2 bg-rose-500 hover:bg-rose-600 text-slate-950 font-bold rounded-lg text-xs py-2 px-3 flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-plus text-[10px]"></i> Add
+                              </button>
+                        </form>
+
+                        <!-- Khorcha Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead>
+                                    <tr class="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                                        <th class="py-2 px-1">Clear</th>
+                                        <th class="py-2 px-1">Khorchar Details</th>
+                                        <th class="py-2 px-1">Method</th>
+                                        <th class="py-2 px-1 text-right">Amount</th>
+                                        <th class="py-2 px-1 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="khorcha-table-body">
+                                    <!-- Dynamic rows loaded by JS -->
+                                </tbody>
+                            </table>
+                            <div id="khorcha-empty-state" class="text-center py-6 text-slate-500 text-xs italic hidden">Kono khorcha record nei.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: History Archive Content -->
+            <div id="content-history" class="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl hidden">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-200 flex items-center gap-2">
+                            <i class="fa-solid fa-history text-emerald-400"></i>
+                            System Archive History Lookup
+                        </h2>
+                        <p class="text-xs text-slate-400">Filter and retrieve complete transaction logs from previous months</p>
+                    </div>
+                </div>
+
+                <!-- Range picker inputs -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1.5 font-medium">Start Date</label>
+                        <input id="history-start-date" type="date" onchange="filterHistory()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] text-slate-400 mb-1.5 font-medium">End Date</label>
+                        <input id="history-end-date" type="date" onchange="filterHistory()" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none">
+                    </div>
+                    <div>
+                        <button onclick="clearHistoryFilters()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 rounded-lg border border-slate-700">
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Archive values calculation cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Archived Expenses</p>
+                        <p id="history-calc-khorcha" class="text-lg font-black text-rose-400">৳ 0</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Archived Dhar (Minus)</p>
+                        <p id="history-calc-minus" class="text-lg font-black text-amber-500">৳ 0</p>
+                    </div>
+                    <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-400 uppercase font-medium">Archived Joma (Plus)</p>
+                        <p id="history-calc-plus" class="text-lg font-black text-indigo-400">৳ 0</p>
+                    </div>
+                </div>
+
+                <!-- Split panels for Dhar and Khorcha lists -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-850">
+                        <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                            Dhar & Joma Archive
+                        </h3>
+                        <div id="history-dhar-list" class="max-h-80 overflow-y-auto space-y-2.5 pr-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-850">
+                        <h3 class="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                            Expense Khorcha Archive
+                        </h3>
+                        <div id="history-khorcha-list" class="max-h-80 overflow-y-auto space-y-2.5 pr-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: Month Salary Prompt (First morning of month) -->
+    <div id="salary-modal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative bounce-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-piggy-bank text-emerald-400"></i>
+                    Nothun Maser Salary
+                </h3>
+                <button onclick="closeSalaryModal()" class="text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p class="text-xs text-slate-400 mb-4">
+                Nothun mas shuru hoyeche! Doya kore manually eii maser net Salary amount enter korun:
+            </p>
+
+            <form onsubmit="saveMonthlySalary(event)" class="space-y-4">
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">৳</span>
+                    <input id="salary-input" type="number" required placeholder="E.g. 11836" class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-lg font-extrabold text-slate-100 focus:outline-none">
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black rounded-xl py-2.5 text-xs transition duration-150 shadow-lg">
+                    Salary Set Korun 🚀
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Simulated UPI Payment Flow Gateway -->
+    <div id="payment-modal" class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-md hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden bounce-in">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+                <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen text-indigo-400 animate-pulse"></i>
+                    Simulated UPI App Portal
+                </h3>
+                <button onclick="closePaymentModal()" class="text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Content Area 1: Selection -->
+            <div id="pay-screen-select" class="space-y-4">
+                <p class="text-xs text-slate-400">
+                    Choose payment app to process <span id="pay-amount-label" class="text-slate-200 font-bold">৳ 0</span> for "<span id="pay-note-label">Item</span>":
+                </p>
+                <div class="grid grid-cols-1 gap-2.5">
+                    <button onclick="processAppPayment('PhonePe')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-between transition">
+                        <span class="flex items-center gap-2">🟣 PhonePe Link Direction</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    <button onclick="processAppPayment('Google Pay')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-between transition">
+                        <span class="flex items-center gap-2">🔵 Google Pay Link Direction</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    <button onclick="processAppPayment('Paytm Wallet')" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-between transition">
+                        <span class="flex items-center gap-2">🌐 Paytm Wallet Link</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                    <button onclick="processAppPayment('Amazon Pay')" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-between transition">
+                        <span class="flex items-center gap-2">🟠 Amazon Pay Link</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area 2: Spinner processing -->
+            <div id="pay-screen-processing" class="text-center py-10 space-y-4 hidden">
+                <div class="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div>
+                    <p class="text-sm font-bold text-slate-200">Connecting with secure server...</p>
+                    <p class="text-[10px] text-slate-500 mt-1">Authenticating encrypted token. Please wait...</p>
+                </div>
+            </div>
+
+            <!-- Content Area 3: Success banner -->
+            <div id="pay-screen-success" class="text-center py-10 space-y-4 hidden">
+                <div class="w-16 h-16 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                    <i class="fa-solid fa-check text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-base font-extrabold text-emerald-400">Payment Successful! ✅</p>
+                    <p id="pay-success-description" class="text-xs text-slate-400 mt-1">Settled successfully.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CORE APPLICATION JAVASCRIPT LOGIC -->
+    <script>
+        // State storage variables
+        let appPattern = localStorage.getItem('app_pattern') || '';
+        let isLocked = true;
+        let activeTab = 'current';
+
+        let salaryList = JSON.parse(localStorage.getItem('calc_salaries')) || [
+            { month: new Date().toISOString().slice(0, 7), amount: 11836, timestamp: Date.now() }
+        ];
+
+        let dharList = JSON.parse(localStorage.getItem('calc_dhar_pro')) || [
+            { id: 'd1', note: 'Dipom Vo', amount: 100, isPlus: false, isCompleted: true, date: '2026-07-15', method: 'cash' },
+            { id: 'd2', note: 'Chaitali vo', amount: 50, isPlus: false, isCompleted: false, date: '2026-07-16', method: 'online', upiApp: 'PhonePe' },
+            { id: 'd3', note: 'Noshipur Tailor', amount: 80, isPlus: false, isCompleted: true, date: '2026-07-14', method: 'cash' },
+            { id: 'd4', note: 'Biryani wala', amount: 70, isPlus: false, isCompleted: true, date: '2026-07-15', method: 'cash' },
+            { id: 'd5', note: 'Chul Dari', amount: 100, isPlus: false, isCompleted: true, date: '2026-07-16', method: 'cash' },
+        ];
+
+        let khorchaList = JSON.parse(localStorage.getItem('calc_khorcha_pro')) || [
+            { id: 'k1', note: 'Computer Table', amount: 3500, isCompleted: false, date: '2026-07-15', method: 'cash' },
+            { id: 'k2', note: 'Electric Bill', amount: 1000, isCompleted: false, date: '2026-07-16', method: 'online', upiApp: 'PhonePe' },
+            { id: 'k3', note: 'Analowa', amount: 3000, isCompleted: true, date: '2026-07-10', method: 'cash' },
+            { id: 'k4', note: 'Bike servicing', amount: 1500, isCompleted: true, date: '2026-07-12', method: 'online', upiApp: 'GPay' },
+            { id: 'k5', note: 'Vabi+ Samima churidar', amount: 1800, isCompleted: false, date: '2026-07-13', method: 'cash' },
+            { id: 'k6', note: 'Alna Cum Dressing Table', amount: 3500, isCompleted: false, date: '2026-07-14', method: 'online', upiApp: 'PhonePe' },
+            { id: 'k7', note: 'Honeymoon Trip', amount: 5000, isCompleted: false, date: '2026-07-15', method: 'online', upiApp: 'Paytm' },
+        ];
+
+        // Currently drawing patterns lock indicators
+        let patternInput = [];
+        let isDrawing = false;
+        let selectedPaymentItem = null;
+
+        // Display simple custom notifications/toast alert box
+        function showToast(message) {
+            const toastEl = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            toastText.textContent = message;
+            toastEl.classList.remove('hidden');
+            setTimeout(() => {
+                toastEl.classList.add('hidden');
+            }, 3000);
+        }
+
+        // On system configuration load
+        window.onload = function() {
+            renderPatternGrid();
+            initAppLock();
+        };
+
+        // Generates interactive lock pattern layout
+        function renderPatternGrid() {
+            const grid = document.getElementById('pattern-grid');
+            grid.innerHTML = '';
+            for (let i = 1; i <= 9; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'w-16 h-16 flex items-center justify-center cursor-pointer relative';
+                dot.dataset.num = i;
+                
+                const dotInner = document.createElement('div');
+                dotInner.className = 'w-6 h-6 rounded-full bg-slate-700 transition-all duration-150 pattern-dot-inner';
+                dotInner.id = `dot-${i}`;
+                dot.appendChild(dotInner);
+
+                // Touch and mouse events for high security drawing
+                dot.addEventListener('mousedown', () => startDrawing(i));
+                dot.addEventListener('mouseenter', () => hoverDot(i));
+                dot.addEventListener('mouseup', endDrawing);
+
+                dot.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    startDrawing(i);
+                });
+                dot.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (target) {
+                        const parent = target.closest('[data-num]');
+                        if (parent) {
+                            hoverDot(parseInt(parent.dataset.num));
+                        }
+                    }
+                });
+                dot.addEventListener('touchend', endDrawing);
+
+                grid.appendChild(dot);
+            }
+        }
+
+        function initAppLock() {
+            if (!appPattern) {
+                document.getElementById('lock-feedback-text').textContent = "Nijer nothun security pattern grid-e drag korun";
+            } else {
+                document.getElementById('lock-feedback-text').textContent = "Security Pattern-ti ekhane akun";
+            }
+        }
+
+        function startDrawing(num) {
+            isDrawing = true;
+            patternInput = [num];
+            highlightDot(num);
+        }
+
+        function hoverDot(num) {
+            if (!isDrawing) return;
+            if (!patternInput.includes(num)) {
+                patternInput.push(num);
+                highlightDot(num);
+            }
+        }
+
+        function highlightDot(num) {
+            const inner = document.getElementById(`dot-${num}`);
+            if (inner) {
+                inner.classList.add('bg-emerald-400', 'scale-125', 'shadow-[0_0_15px_rgba(52,211,153,0.6)]');
+            }
+        }
+
+        function clearGridHighlights() {
+            for (let i = 1; i <= 9; i++) {
+                const inner = document.getElementById(`dot-${i}`);
+                if (inner) {
+                    inner.className = 'w-6 h-6 rounded-full bg-slate-700 transition-all duration-150 pattern-dot-inner';
+                }
+            }
+        }
+
+        function endDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            const finalPattern = patternInput.join('-');
+            
+            if (!appPattern) {
+                // Setting up pattern for first time
+                if (patternInput.length < 3) {
+                    document.getElementById('lock-feedback-text').textContent = "❌ Minimum 3 ti dot details connect korun!";
+                    clearGridHighlights();
+                    return;
+                }
+                localStorage.setItem('app_pattern', finalPattern);
+                appPattern = finalPattern;
+                unlockApp();
+                showToast("🎉 Nothun Security Pattern and pin active!");
+            } else {
+                // Unlock check
+                if (finalPattern === appPattern) {
+                    unlockApp();
+                } else {
+                    document.getElementById('lock-feedback-text').textContent = "🔴 Vul Pattern! Abar dragg korun.";
+                    clearGridHighlights();
+                }
+            }
+        }
+
+        function handleFingerprintUnlock() {
+            unlockApp();
+            showToast("🔓 Fingerprint touch-id unlock processed successfully!");
+        }
+
+        function triggerPatternReset() {
+            localStorage.removeItem('app_pattern');
+            appPattern = '';
+            document.getElementById('lock-feedback-text').textContent = "Nothun security pattern set korun";
+            clearGridHighlights();
+            showToast("Pattern security completely cleared. Now create a new one!");
+        }
+
+        function unlockApp() {
+            isLocked = false;
+            document.getElementById('lock-screen').classList.add('hidden');
+            document.getElementById('main-app').classList.remove('hidden');
+            
+            // Check current month salary presence on 1st morning or initialization
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            const salary = salaryList.find(s => s.month === currentMonthKey);
+            if (!salary) {
+                openSalaryModal();
+            }
+            
+            recomputeAndRender();
+        }
+
+        function lockApp() {
+            isLocked = true;
+            clearGridHighlights();
+            initAppLock();
+            document.getElementById('lock-screen').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('hidden');
+        }
+
+        // Recompute all balance lists
+        function recomputeAndRender() {
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            document.getElementById('current-month-display').textContent = currentMonthKey;
+
+            const salaryObj = salaryList.find(s => s.month === currentMonthKey) || { amount: 11836 };
+            const salaryAmount = salaryObj.amount;
+
+            // Display components
+            document.getElementById('current-salary-display').textContent = `৳ ${salaryAmount.toLocaleString()}`;
+            document.getElementById('ledger-salary').textContent = `৳ ${salaryAmount.toLocaleString()}`;
+
+            // Dhar evaluations
+            const activeDhars = dharList.filter(d => d.date.startsWith(currentMonthKey));
+            const dharMinus = activeDhars.filter(d => !d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+            const dharPlus = activeDhars.filter(d => d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+
+            document.getElementById('ledger-dhar-minus').textContent = `- ৳ ${dharMinus.toLocaleString()}`;
+            document.getElementById('ledger-dhar-plus').textContent = `+ ৳ ${dharPlus.toLocaleString()}`;
+
+            // Khorcha calculation
+            const activeKhorchas = khorchaList.filter(k => k.date.startsWith(currentMonthKey));
+            const khorchaTotal = activeKhorchas.reduce((sum, k) => sum + k.amount, 0);
+            document.getElementById('ledger-khorcha').textContent = `- ৳ ${khorchaTotal.toLocaleString()}`;
+
+            // Pocket balance calculation
+            const netBalance = salaryAmount + dharPlus - khorchaTotal - dharMinus;
+            const netBalanceEl = document.getElementById('ledger-net-balance');
+            netBalanceEl.textContent = `৳ ${netBalance.toLocaleString()}`;
+            if (netBalance >= 0) {
+                netBalanceEl.className = "text-2xl font-black text-emerald-400";
+            } else {
+                netBalanceEl.className = "text-2xl font-black text-rose-500";
+            }
+
+            // Split Cash & Online flows
+            const cashFlow = salaryAmount * 0.4;
+            const onlineFlow = salaryAmount * 0.6;
+            document.getElementById('cash-flow-display').textContent = `৳ ${cashFlow.toLocaleString()}`;
+            document.getElementById('online-flow-display').textContent = `৳ ${onlineFlow.toLocaleString()}`;
+
+            // Save variables to localStorage
+            localStorage.setItem('calc_salaries', JSON.stringify(salaryList));
+            localStorage.setItem('calc_dhar_pro', JSON.stringify(dharList));
+            localStorage.setItem('calc_khorcha_pro', JSON.stringify(khorchaList));
+
+            // Render tables
+            renderActiveTables(currentMonthKey);
+            filterHistory();
+        }
+
+        // Render dynamic tables for entries
+        function renderActiveTables(monthKey) {
+            const activeDhars = dharList.filter(d => d.date.startsWith(monthKey));
+            const dharBody = document.getElementById('dhar-table-body');
+            dharBody.innerHTML = '';
+            
+            if (activeDhars.length === 0) {
+                document.getElementById('dhar-empty-state').classList.remove('hidden');
+            } else {
+                document.getElementById('dhar-empty-state').classList.add('hidden');
+                activeDhars.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.className = `border-b border-slate-850/50 hover:bg-slate-900/40 transition ${item.isCompleted ? 'opacity-60 bg-emerald-950/10' : ''}`;
+                    
+                    const clearBtnContent = item.isCompleted ? '<i class="fa-solid fa-check"></i>' : (item.method === 'cash' ? 'C' : 'Pay');
+                    const clearBtnClass = item.isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700';
+
+                    row.innerHTML = `
+                        <td class="py-3 px-1">
+                            <button onclick="handleDharClear('${item.id}')" class="w-8 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${clearBtnClass}">
+                                ${clearBtnContent}
+                            </button>
+                        </td>
+                        <td class="py-3 px-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-semibold ${item.isCompleted ? 'line-through text-slate-500' : 'text-slate-200'}">
+                                    ${index + 1}. ${item.note}
+                                </span>
+                                ${item.isCompleted ? `<span class="text-[8px] bg-emerald-500/10 text-emerald-400 px-1 rounded-full">Done ${item.upiApp ? `(${item.upiApp})` : ''}</span>` : ''}
+                            </div>
+                        </td>
+                        <td class="py-3 px-1">
+                            <span class="text-[10px] font-medium uppercase ${item.method === 'cash' ? 'text-amber-400' : 'text-indigo-400'}">${item.method}</span>
+                        </td>
+                        <td class="py-3 px-1 text-right">
+                            <span class="font-bold font-mono px-1.5 py-0.5 rounded ${item.isPlus ? 'text-indigo-400 bg-indigo-950/30' : 'text-amber-500 bg-amber-950/30'}">
+                                ${item.isPlus ? '+' : '-'} ৳${item.amount}
+                            </span>
+                        </td>
+                        <td class="py-3 px-1 text-center">
+                            <button onclick="deleteDharEntry('${item.id}')" class="text-slate-500 hover:text-rose-400 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    `;
+                    dharBody.appendChild(row);
+                });
+            }
+
+            const activeKhorchas = khorchaList.filter(k => k.date.startsWith(monthKey));
+            const khorchaBody = document.getElementById('khorcha-table-body');
+            khorchaBody.innerHTML = '';
+
+            if (activeKhorchas.length === 0) {
+                document.getElementById('khorcha-empty-state').classList.remove('hidden');
+            } else {
+                document.getElementById('khorcha-empty-state').classList.add('hidden');
+                activeKhorchas.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.className = `border-b border-slate-850/50 hover:bg-slate-900/40 transition ${item.isCompleted ? 'opacity-60 bg-emerald-950/10' : ''}`;
+                    
+                    const clearBtnContent = item.isCompleted ? '<i class="fa-solid fa-check"></i>' : (item.method === 'cash' ? 'C' : 'Pay');
+                    const clearBtnClass = item.isCompleted ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700';
+
+                    row.innerHTML = `
+                        <td class="py-3 px-1">
+                            <button onclick="handleKhorchaClear('${item.id}')" class="w-8 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${clearBtnClass}">
+                                ${clearBtnContent}
+                            </button>
+                        </td>
+                        <td class="py-3 px-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="font-semibold ${item.isCompleted ? 'line-through text-slate-500' : 'text-slate-200'}">
+                                    ${index + 1}. ${item.note}
+                                </span>
+                                ${item.isCompleted ? `<span class="text-[8px] bg-emerald-500/10 text-emerald-400 px-1 rounded-full">Done ${item.upiApp ? `(${item.upiApp})` : ''}</span>` : ''}
+                            </div>
+                        </td>
+                        <td class="py-3 px-1">
+                            <span class="text-[10px] font-medium uppercase ${item.method === 'cash' ? 'text-amber-400' : 'text-indigo-400'}">${item.method}</span>
+                        </td>
+                        <td class="py-3 px-1 text-right text-rose-400 font-bold font-mono">
+                            ৳${item.amount}
+                        </td>
+                        <td class="py-3 px-1 text-center">
+                            <button onclick="deleteKhorchaEntry('${item.id}')" class="text-slate-500 hover:text-rose-400 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    `;
+                    khorchaBody.appendChild(row);
+                });
+            }
+        }
+
+        // Add Forms triggers
+        function addDharEntry(e) {
+            e.preventDefault();
+            const note = document.getElementById('dhar-note').value;
+            const amount = parseFloat(document.getElementById('dhar-amount').value);
+            const type = document.getElementById('dhar-type').value;
+            const method = document.getElementById('dhar-method').value;
+
+            if (!note || isNaN(amount)) return;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const newItem = {
+                id: 'dhar_' + Date.now(),
+                note: note,
+                amount: amount,
+                isPlus: type === 'plus',
+                isCompleted: false,
+                date: today,
+                method: method
+            };
+
+            dharList.unshift(newItem);
+            document.getElementById('dhar-form').reset();
+            showToast("Added Dhar/Joma entry!");
+            recomputeAndRender();
+        }
+
+        function addKhorchaEntry(e) {
+            e.preventDefault();
+            const note = document.getElementById('khorcha-note').value;
+            const amount = parseFloat(document.getElementById('khorcha-amount').value);
+            const method = document.getElementById('khorcha-method').value;
+
+            if (!note || isNaN(amount)) return;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const newItem = {
+                id: 'khorcha_' + Date.now(),
+                note: note,
+                amount: amount,
+                isCompleted: false,
+                date: today,
+                method: method
+            };
+
+            khorchaList.unshift(newItem);
+            document.getElementById('khorcha-form').reset();
+            showToast("Added Khorcha entry!");
+            recomputeAndRender();
+        }
+
+        // Clear action handlers
+        function handleDharClear(id) {
+            const item = dharList.find(d => d.id === id);
+            if (!item) return;
+
+            if (item.isCompleted) {
+                item.isCompleted = false;
+                item.upiApp = undefined;
+                showToast("Cleared status removed.");
+                recomputeAndRender();
+            } else {
+                if (item.method === 'cash') {
+                    item.isCompleted = true;
+                    showToast("Cash Dhar Cleared!");
+                    recomputeAndRender();
+                } else {
+                    triggerOnlinePayment(item, 'dhar');
+                }
+            }
+        }
+
+        function handleKhorchaClear(id) {
+            const item = khorchaList.find(k => k.id === id);
+            if (!item) return;
+
+            if (item.isCompleted) {
+                item.isCompleted = false;
+                item.upiApp = undefined;
+                showToast("Cleared status removed.");
+                recomputeAndRender();
+            } else {
+                if (item.method === 'cash') {
+                    item.isCompleted = true;
+                    showToast("Cash Khorcha Done!");
+                    recomputeAndRender();
+                } else {
+                    triggerOnlinePayment(item, 'khorcha');
+                }
+            }
+        }
+
+        function deleteDharEntry(id) {
+            dharList = dharList.filter(d => d.id !== id);
+            showToast("Deleted entry!");
+            recomputeAndRender();
+        }
+
+        function deleteKhorchaEntry(id) {
+            khorchaList = khorchaList.filter(k => k.id !== id);
+            showToast("Deleted entry!");
+            recomputeAndRender();
+        }
+
+        // Online simulation flow trigger
+        function triggerOnlinePayment(item, type) {
+            selectedPaymentItem = { ...item, type: type };
+            document.getElementById('pay-amount-label').textContent = `৳ ${item.amount}`;
+            document.getElementById('pay-note-label').textContent = item.note;
+
+            document.getElementById('pay-screen-select').classList.remove('hidden');
+            document.getElementById('pay-screen-processing').classList.add('hidden');
+            document.getElementById('pay-screen-success').classList.add('hidden');
+
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+
+        function processAppPayment(appName) {
+            document.getElementById('pay-screen-select').classList.add('hidden');
+            document.getElementById('pay-screen-processing').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('pay-screen-processing').classList.add('hidden');
+                document.getElementById('pay-screen-success').classList.remove('hidden');
+                document.getElementById('pay-success-description').textContent = `৳ ${selectedPaymentItem.amount} successfully settled via native ${appName} integration.`;
+
+                setTimeout(() => {
+                    // Update main variables
+                    if (selectedPaymentItem.type === 'dhar') {
+                        const target = dharList.find(d => d.id === selectedPaymentItem.id);
+                        if (target) {
+                            target.isCompleted = true;
+                            target.upiApp = appName;
+                        }
+                    } else {
+                        const target = khorchaList.find(k => k.id === selectedPaymentItem.id);
+                        if (target) {
+                            target.isCompleted = true;
+                            target.upiApp = appName;
+                        }
+                    }
+                    closePaymentModal();
+                    recomputeAndRender();
+                    showToast(`Simulated Payment Completed via ${appName}!`);
+                }, 1500);
+            }, 1500);
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+            selectedPaymentItem = null;
+        }
+
+        // Salary Modals
+        function openSalaryModal() {
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            const sal = salaryList.find(s => s.month === currentMonthKey) || { amount: 11836 };
+            document.getElementById('salary-input').value = sal.amount;
+            document.getElementById('salary-modal').classList.remove('hidden');
+        }
+
+        function closeSalaryModal() {
+            document.getElementById('salary-modal').classList.add('hidden');
+        }
+
+        function saveMonthlySalary(e) {
+            e.preventDefault();
+            const amt = parseFloat(document.getElementById('salary-input').value);
+            if (isNaN(amt)) return;
+
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            salaryList = salaryList.filter(s => s.month !== currentMonthKey);
+            salaryList.push({
+                month: currentMonthKey,
+                amount: amt,
+                timestamp: Date.now()
+            });
+
+            closeSalaryModal();
+            showToast(`Current Month Salary updated to ৳${amt}!`);
+            recomputeAndRender();
+        }
+
+        // Navigation Tabs Toggle
+        function switchTab(tab) {
+            activeTab = tab;
+            if (tab === 'current') {
+                document.getElementById('tab-current').className = "px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md";
+                document.getElementById('tab-history').className = "px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750";
+                
+                document.getElementById('content-current').classList.remove('hidden');
+                document.getElementById('content-history').classList.add('hidden');
+            } else {
+                document.getElementById('tab-current').className = "px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition bg-slate-800 text-slate-300 border border-slate-700 hover:bg-slate-750";
+                document.getElementById('tab-history').className = "px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md";
+                
+                document.getElementById('content-current').classList.add('hidden');
+                document.getElementById('content-history').classList.remove('hidden');
+                filterHistory();
+            }
+        }
+
+        // Date Range Filters for History Archive Page
+        function filterHistory() {
+            const start = document.getElementById('history-start-date').value;
+            const end = document.getElementById('history-end-date').value;
+
+            let filteredDhar = [...dharList];
+            let filteredKhorcha = [...khorchaList];
+
+            if (start) {
+                filteredDhar = filteredDhar.filter(d => d.date >= start);
+                filteredKhorcha = filteredKhorcha.filter(k => k.date >= start);
+            }
+            if (end) {
+                filteredDhar = filteredDhar.filter(d => d.date <= end);
+                filteredKhorcha = filteredKhorcha.filter(k => k.date <= end);
+            }
+
+            // Sub Calculations
+            const historyMinus = filteredDhar.filter(d => !d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+            const historyPlus = filteredDhar.filter(d => d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+            const historyKhorcha = filteredKhorcha.reduce((sum, k) => sum + k.amount, 0);
+
+            document.getElementById('history-calc-minus').textContent = `৳ ${historyMinus.toLocaleString()}`;
+            document.getElementById('history-calc-plus').textContent = `৳ ${historyPlus.toLocaleString()}`;
+            document.getElementById('history-calc-khorcha').textContent = `৳ ${historyKhorcha.toLocaleString()}`;
+
+            // Render History Panels
+            const dharListEl = document.getElementById('history-dhar-list');
+            dharListEl.innerHTML = '';
+            if (filteredDhar.length === 0) {
+                dharListEl.innerHTML = '<p class="text-xs text-slate-500 italic">No entries match filters.</p>';
+            } else {
+                filteredDhar.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'bg-slate-900 p-2.5 rounded-lg border border-slate-850 flex items-center justify-between text-xs';
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-slate-200">${item.note}</p>
+                            <p class="text-[9px] text-slate-500 mt-0.5">${item.date} • ${item.method.toUpperCase()}</p>
+                        </div>
+                        <span class="font-mono font-bold ${item.isPlus ? 'text-indigo-400' : 'text-amber-500'}">
+                            ${item.isPlus ? '+' : '-'} ৳${item.amount}
+                        </span>
+                    `;
+                    dharListEl.appendChild(el);
+                });
+            }
+
+            const khorchaListEl = document.getElementById('history-khorcha-list');
+            khorchaListEl.innerHTML = '';
+            if (filteredKhorcha.length === 0) {
+                khorchaListEl.innerHTML = '<p class="text-xs text-slate-500 italic">No entries match filters.</p>';
+            } else {
+                filteredKhorcha.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'bg-slate-900 p-2.5 rounded-lg border border-slate-850 flex items-center justify-between text-xs';
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-semibold text-slate-200">${item.note}</p>
+                            <p class="text-[9px] text-slate-500 mt-0.5">${item.date} • ${item.method.toUpperCase()}</p>
+                        </div>
+                        <span class="font-mono font-bold text-rose-400">
+                            - ৳${item.amount}
+                        </span>
+                    `;
+                    khorchaListEl.appendChild(el);
+                });
+            }
+        }
+
+        function clearHistoryFilters() {
+            document.getElementById('history-start-date').value = '';
+            document.getElementById('history-end-date').value = '';
+            filterHistory();
+            showToast("Filters reset!");
+        }
+
+        // Reset to original prompt state
+        function resetDataToTemplate() {
+            if (window.confirm("Apni ki shob data reset kore shurur list-ti firiye ante chan?")) {
+                const currentM = new Date().toISOString().slice(0, 7);
+                salaryList = [{ month: currentM, amount: 11836, timestamp: Date.now() }];
+                dharList = [
+                    { id: 'd1', note: 'Dipom Vo', amount: 100, isPlus: false, isCompleted: true, date: `${currentM}-15`, method: 'cash' },
+                    { id: 'd2', note: 'Chaitali vo', amount: 50, isPlus: false, isCompleted: false, date: `${currentM}-16`, method: 'online', upiApp: 'PhonePe' },
+                    { id: 'd3', note: 'Noshipur Tailor', amount: 80, isPlus: false, isCompleted: true, date: `${currentM}-14`, method: 'cash' },
+                    { id: 'd4', note: 'Biryani wala', amount: 70, isPlus: false, isCompleted: true, date: `${currentM}-15`, method: 'cash' },
+                    { id: 'd5', note: 'Chul Dari', amount: 100, isPlus: false, isCompleted: true, date: `${currentM}-16`, method: 'cash' },
+                ];
+                khorchaList = [
+                    { id: 'k1', note: 'Computer Table', amount: 3500, isCompleted: false, date: `${currentM}-15`, method: 'cash' },
+                    { id: 'k2', note: 'Electric Bill', amount: 1000, isCompleted: false, date: `${currentM}-16`, method: 'online', upiApp: 'PhonePe' },
+                    { id: 'k3', note: 'Analowa', amount: 3000, isCompleted: true, date: `${currentM}-10`, method: 'cash' },
+                    { id: 'k4', note: 'Bike servicing', amount: 1500, isCompleted: true, date: `${currentM}-12`, method: 'online', upiApp: 'GPay' },
+                    { id: 'k5', note: 'Vabi+ Samima churidar', amount: 1800, isCompleted: false, date: `${currentM}-13`, method: 'cash' },
+                    { id: 'k6', note: 'Alna Cum Dressing Table', amount: 3500, isCompleted: false, date: `${currentM}-14`, method: 'online', upiApp: 'PhonePe' },
+                    { id: 'k7', note: 'Honeymoon Trip', amount: 5000, isCompleted: false, date: `${currentM}-15`, method: 'online', upiApp: 'Paytm' },
+                ];
+                showToast("System configurations reset to initial default values!");
+                recomputeAndRender();
+            }
+        }
+    </script>
+</body>
+</html>
+
+```
