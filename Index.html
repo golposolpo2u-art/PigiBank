@@ -1,0 +1,1145 @@
+```react
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Plus, 
+  Minus, 
+  CheckCircle2, 
+  Trash2, 
+  Wallet, 
+  RotateCcw, 
+  Check, 
+  PiggyBank,
+  Lock,
+  Unlock,
+  Calendar,
+  Smartphone,
+  History,
+  Fingerprint,
+  Smartphone as PhoneIcon,
+  CreditCard,
+  X,
+  ChevronRight,
+  ArrowRight
+} from 'lucide-react';
+
+export default function App() {
+  // App Lock States
+  const [isLocked, setIsLocked] = useState(true);
+  const [savedPattern, setSavedPattern] = useState(() => localStorage.getItem('app_pattern') || '');
+  const [isSettingPattern, setIsSettingPattern] = useState(!localStorage.getItem('app_pattern'));
+  const [patternInput, setPatternInput] = useState([]);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [lockFeedback, setLockFeedback] = useState('Nijer security pattern-ti akun');
+
+  // Core Financial States
+  const [salaryList, setSalaryList] = useState(() => {
+    const saved = localStorage.getItem('calc_salaries');
+    if (saved) return JSON.parse(saved);
+    // Seed standard salary for current month
+    const currentMonthKey = new Date().toISOString().slice(0, 7); // "YYYY-MM"
+    return [{ month: currentMonthKey, amount: 11836, timestamp: Date.now() }];
+  });
+
+  const [dharList, setDharList] = useState(() => {
+    const saved = localStorage.getItem('calc_dhar_pro');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 'd1', note: 'Dipom Vo', amount: 100, isPlus: false, isCompleted: true, date: '2026-07-15', method: 'cash' },
+      { id: 'd2', note: 'Chaitali vo', amount: 50, isPlus: false, isCompleted: false, date: '2026-07-16', method: 'online', upiApp: 'PhonePe' },
+      { id: 'd3', note: 'Noshipur Tailor', amount: 80, isPlus: false, isCompleted: true, date: '2026-07-14', method: 'cash' },
+      { id: 'd4', note: 'Biryani wala', amount: 70, isPlus: false, isCompleted: true, date: '2026-07-15', method: 'cash' },
+      { id: 'd5', note: 'Chul Dari', amount: 100, isPlus: false, isCompleted: true, date: '2026-07-16', method: 'cash' },
+    ];
+  });
+
+  const [khorchaList, setKhorchaList] = useState(() => {
+    const saved = localStorage.getItem('calc_khorcha_pro');
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: 'k1', note: 'Computer Table', amount: 3500, isCompleted: false, date: '2026-07-15', method: 'cash' },
+      { id: 'k2', note: 'Electric Bill', amount: 1000, isCompleted: false, date: '2026-07-16', method: 'online', upiApp: 'PhonePe' },
+      { id: 'k3', note: 'Analowa', amount: 3000, isCompleted: true, date: '2026-07-10', method: 'cash' },
+      { id: 'k4', note: 'Bike servicing', amount: 1500, isCompleted: true, date: '2026-07-12', method: 'online', upiApp: 'GPay' },
+      { id: 'k5', note: 'Vabi+ Samima churidar', amount: 1800, isCompleted: false, date: '2026-07-13', method: 'cash' },
+      { id: 'k6', note: 'Alna Cum Dressing Table', amount: 3500, isCompleted: false, date: '2026-07-14', method: 'online', upiApp: 'PhonePe' },
+      { id: 'k7', note: 'Honeymoon Trip', amount: 5000, isCompleted: false, date: '2026-07-15', method: 'online', upiApp: 'Paytm' },
+    ];
+  });
+
+  // UI Interactive States
+  const [activeTab, setActiveTab] = useState('current'); // 'current' or 'history'
+  const [salaryModalOpen, setSalaryModalOpen] = useState(false);
+  const [tempSalary, setTempSalary] = useState('');
+  
+  // Payment Gateway Simulator States
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [activePaymentItem, setActivePaymentItem] = useState(null);
+  const [simulatedPayingState, setSimulatedPayingState] = useState('select'); // 'select', 'processing', 'success'
+  const [selectedUpiApp, setSelectedUpiApp] = useState('');
+
+  // Date Filters
+  const [historyStartDate, setHistoryStartDate] = useState('');
+  const [historyEndDate, setHistoryEndDate] = useState('');
+
+  // Inputs
+  const [dharNote, setDharNote] = useState('');
+  const [dharAmount, setDharAmount] = useState('');
+  const [dharType, setDharType] = useState('minus'); // 'minus' or 'plus' (Joma)
+  const [dharMethod, setDharMethod] = useState('cash'); // 'cash' or 'online'
+
+  const [khorchaNote, setKhorchaNote] = useState('');
+  const [khorchaAmount, setKhorchaAmount] = useState('');
+  const [khorchaMethod, setKhorchaMethod] = useState('cash');
+
+  const [toastMessage, setToastMessage] = useState('');
+
+  // Auto-Save Effect
+  useEffect(() => {
+    localStorage.setItem('calc_salaries', JSON.stringify(salaryList));
+  }, [salaryList]);
+
+  useEffect(() => {
+    localStorage.setItem('calc_dhar_pro', JSON.stringify(dharList));
+  }, [dharList]);
+
+  useEffect(() => {
+    localStorage.setItem('calc_khorcha_pro', JSON.stringify(khorchaList));
+  }, [khorchaList]);
+
+  // Check if salary is configured for the current month on app load
+  useEffect(() => {
+    if (!isLocked) {
+      const currentMonthKey = new Date().toISOString().slice(0, 7); // YYYY-MM
+      const currentSalary = salaryList.find(s => s.month === currentMonthKey);
+      if (!currentSalary) {
+        // First morning of month detection! Show Prompt
+        setSalaryModalOpen(true);
+      }
+    }
+  }, [isLocked, salaryList]);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(''), 3000);
+  };
+
+  // Pattern unlock logic helpers
+  const handleDotInteraction = (num) => {
+    if (!isDrawing) return;
+    if (!patternInput.includes(num)) {
+      const updated = [...patternInput, num];
+      setPatternInput(updated);
+    }
+  };
+
+  const startPattern = (num) => {
+    setIsDrawing(true);
+    setPatternInput([num]);
+  };
+
+  const endPattern = () => {
+    setIsDrawing(false);
+    const patternStr = patternInput.join('-');
+    if (isSettingPattern) {
+      if (patternInput.length < 3) {
+        setLockFeedback('Minimum 3 ti dot connect korun!');
+        setPatternInput([]);
+        return;
+      }
+      localStorage.setItem('app_pattern', patternStr);
+      setSavedPattern(patternStr);
+      setIsSettingPattern(false);
+      setIsLocked(false);
+      showToast('🎉 Security Pattern set hoyeche & App unlocked!');
+    } else {
+      if (patternStr === savedPattern) {
+        setIsLocked(false);
+        showToast('🔓 Access Granted!');
+      } else {
+        setLockFeedback('🔴 Vul pattern! Abar chesta korun');
+        setPatternInput([]);
+      }
+    }
+  };
+
+  const handleFingerprintSimulation = () => {
+    setIsLocked(false);
+    showToast('🔓 Touch ID Fingerprint dynamic unlock completed!');
+  };
+
+  // Monthly Manual Salary Setter
+  const submitMonthlySalary = (e) => {
+    e.preventDefault();
+    if (!tempSalary || isNaN(parseFloat(tempSalary))) {
+      showToast('Doya kore shothik amount likhun!');
+      return;
+    }
+    const currentMonthKey = new Date().toISOString().slice(0, 7);
+    const updatedSalaryList = salaryList.filter(s => s.month !== currentMonthKey);
+    updatedSalaryList.push({
+      month: currentMonthKey,
+      amount: parseFloat(tempSalary),
+      timestamp: Date.now()
+    });
+    setSalaryList(updatedSalaryList);
+    setSalaryModalOpen(false);
+    setTempSalary('');
+    showToast(`৳ ${parseFloat(tempSalary).toLocaleString()} Salary set hoyeche!`);
+  };
+
+  // Transactions Logic
+  const getCurrentMonthLimits = () => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    return { startOfMonth, endOfMonth };
+  };
+
+  const handleAddDhar = (e) => {
+    e.preventDefault();
+    if (!dharNote.trim() || !dharAmount) {
+      showToast('Note ebong amount likha baddhotamuluk!');
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const newItem = {
+      id: 'dhar_' + Date.now(),
+      note: dharNote.trim(),
+      amount: parseFloat(dharAmount),
+      isPlus: dharType === 'plus',
+      isCompleted: false,
+      date: today,
+      method: dharMethod,
+      upiApp: dharMethod === 'online' ? 'PhonePe' : undefined
+    };
+    setDharList([newItem, ...dharList]);
+    setDharNote('');
+    setDharAmount('');
+    showToast('Dhar record toiri hoyeche.');
+  };
+
+  const handleAddKhorcha = (e) => {
+    e.preventDefault();
+    if (!khorchaNote.trim() || !khorchaAmount) {
+      showToast('Khorchar name ebong amount din!');
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const newItem = {
+      id: 'khorcha_' + Date.now(),
+      note: khorchaNote.trim(),
+      amount: parseFloat(khorchaAmount),
+      isCompleted: false,
+      date: today,
+      method: khorchaMethod,
+      upiApp: khorchaMethod === 'online' ? 'PhonePe' : undefined
+    };
+    setKhorchaList([newItem, ...khorchaList]);
+    setKhorchaNote('');
+    setKhorchaAmount('');
+    showToast('Khorcha update kora hoyeche!');
+  };
+
+  // Payment triggers
+  const triggerDharClear = (item) => {
+    if (item.isCompleted) {
+      // Toggle back to active
+      setDharList(dharList.map(d => d.id === item.id ? { ...d, isCompleted: false } : d));
+      showToast('Item active status-e ferot geche.');
+    } else {
+      if (item.method === 'cash') {
+        setDharList(dharList.map(d => d.id === item.id ? { ...d, isCompleted: true } : d));
+        showToast('Cash counter cleared!');
+      } else {
+        // Trigger UPI app picker modal
+        setActivePaymentItem({ ...item, type: 'dhar' });
+        setSimulatedPayingState('select');
+        setPaymentModalOpen(true);
+      }
+    }
+  };
+
+  const triggerKhorchaClear = (item) => {
+    if (item.isCompleted) {
+      setKhorchaList(khorchaList.map(k => k.id === item.id ? { ...k, isCompleted: false } : k));
+      showToast('Khorcha active/unpaid kora hoyeche.');
+    } else {
+      if (item.method === 'cash') {
+        setKhorchaList(khorchaList.map(k => k.id === item.id ? { ...k, isCompleted: true } : k));
+        showToast('Cash khorcha done ✅');
+      } else {
+        setActivePaymentItem({ ...item, type: 'khorcha' });
+        setSimulatedPayingState('select');
+        setPaymentModalOpen(true);
+      }
+    }
+  };
+
+  const handleProcessSimulatedPayment = (appName) => {
+    setSelectedUpiApp(appName);
+    setSimulatedPayingState('processing');
+    setTimeout(() => {
+      setSimulatedPayingState('success');
+      setTimeout(() => {
+        // Complete the transaction in main lists
+        const targetId = activePaymentItem.id;
+        if (activePaymentItem.type === 'dhar') {
+          setDharList(dharList.map(d => d.id === targetId ? { ...d, isCompleted: true, upiApp: appName } : d));
+        } else {
+          setKhorchaList(khorchaList.map(k => k.id === targetId ? { ...k, isCompleted: true, upiApp: appName } : k));
+        }
+        setPaymentModalOpen(false);
+        showToast(`🎉 ${appName} payment done dynamically!`);
+      }, 1500);
+    }, 1500);
+  };
+
+  const deleteDhar = (id) => {
+    setDharList(dharList.filter(item => item.id !== id));
+    showToast('Record delete kora hoyeche.');
+  };
+
+  const deleteKhorcha = (id) => {
+    setKhorchaList(khorchaList.filter(item => item.id !== id));
+    showToast('Record delete kora hoyeche.');
+  };
+
+  // Active / Current Month view filtering
+  const currentMonthKey = new Date().toISOString().slice(0, 7);
+  const currentSalaryObj = salaryList.find(s => s.month === currentMonthKey) || { amount: 0 };
+  const currentSalaryValue = currentSalaryObj.amount;
+
+  const currentMonthDhar = dharList.filter(d => d.date.startsWith(currentMonthKey));
+  const currentMonthKhorcha = khorchaList.filter(k => k.date.startsWith(currentMonthKey));
+
+  // Current Month Calculations
+  const currentDharMinus = currentMonthDhar.filter(d => !d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+  const currentDharPlus = currentMonthDhar.filter(d => d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+  const currentKhorchaVal = currentMonthKhorcha.reduce((sum, k) => sum + k.amount, 0);
+
+  // Dynamic Net balance matching user's cash equation: 
+  // Base Salary + Joma (Plus) - Total Khorcha - Total Outstanding Dhar (Minus)
+  const currentNetPocketBalance = currentSalaryValue + currentDharPlus - currentKhorchaVal - currentDharMinus;
+
+  // Let's also split cash and online active assets for advanced view
+  const cashSalary = currentSalaryValue * 0.4; // assumption for visual demo, but we can compute directly
+  const onlineSalary = currentSalaryValue * 0.6; 
+
+  const totalCashOut = currentMonthKhorcha.filter(k => k.method === 'cash').reduce((sum, k) => sum + k.amount, 0) +
+                       currentMonthDhar.filter(d => !d.isPlus && d.method === 'cash').reduce((sum, d) => sum + d.amount, 0);
+  const totalOnlineOut = currentMonthKhorcha.filter(k => k.method === 'online').reduce((sum, k) => sum + k.amount, 0) +
+                         currentMonthDhar.filter(d => !d.isPlus && d.method === 'online').reduce((sum, d) => sum + d.amount, 0);
+
+  // Filtered History Section based on range picker
+  const getFilteredHistory = () => {
+    let dhars = [...dharList];
+    let khorchas = [...khorchaList];
+
+    if (historyStartDate) {
+      dhars = dhars.filter(d => d.date >= historyStartDate);
+      khorchas = khorchas.filter(k => k.date >= historyStartDate);
+    }
+    if (historyEndDate) {
+      dhars = dhars.filter(d => d.date <= historyEndDate);
+      khorchas = khorchas.filter(k => k.date <= historyEndDate);
+    }
+
+    const historyMinus = dhars.filter(d => !d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+    const historyPlus = dhars.filter(d => d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+    const historyKhorcha = khorchas.reduce((sum, k) => sum + k.amount, 0);
+
+    return {
+      dhars,
+      khorchas,
+      historyMinus,
+      historyPlus,
+      historyKhorcha
+    };
+  };
+
+  const historyData = getFilteredHistory();
+
+  // Reset to original prompt state
+  const handleResetData = () => {
+    if (window.confirm("Apni ki shob data reset kore shurur list-ti firiye ante chan?")) {
+      const currentM = new Date().toISOString().slice(0, 7);
+      setSalaryList([{ month: currentM, amount: 11836, timestamp: Date.now() }]);
+      setDharList([
+        { id: 'd1', note: 'Dipom Vo', amount: 100, isPlus: false, isCompleted: true, date: `${currentM}-15`, method: 'cash' },
+        { id: 'd2', note: 'Chaitali vo', amount: 50, isPlus: false, isCompleted: false, date: `${currentM}-16`, method: 'online', upiApp: 'PhonePe' },
+        { id: 'd3', note: 'Noshipur Tailor', amount: 80, isPlus: false, isCompleted: true, date: `${currentM}-14`, method: 'cash' },
+        { id: 'd4', note: 'Biryani wala', amount: 70, isPlus: false, isCompleted: true, date: `${currentM}-15`, method: 'cash' },
+        { id: 'd5', note: 'Chul Dari', amount: 100, isPlus: false, isCompleted: true, date: `${currentM}-16`, method: 'cash' },
+      ]);
+      setKhorchaList([
+        { id: 'k1', note: 'Computer Table', amount: 3500, isCompleted: false, date: `${currentM}-15`, method: 'cash' },
+        { id: 'k2', note: 'Electric Bill', amount: 1000, isCompleted: false, date: `${currentM}-16`, method: 'online', upiApp: 'PhonePe' },
+        { id: 'k3', note: 'Analowa', amount: 3000, isCompleted: true, date: `${currentM}-10`, method: 'cash' },
+        { id: 'k4', note: 'Bike servicing', amount: 1500, isCompleted: true, date: `${currentM}-12`, method: 'online', upiApp: 'GPay' },
+        { id: 'k5', note: 'Vabi+ Samima churidar', amount: 1800, isCompleted: false, date: `${currentM}-13`, method: 'cash' },
+        { id: 'k6', note: 'Alna Cum Dressing Table', amount: 3500, isCompleted: false, date: `${currentM}-14`, method: 'online', upiApp: 'PhonePe' },
+        { id: 'k7', note: 'Honeymoon Trip', amount: 5000, isCompleted: false, date: `${currentM}-15`, method: 'online', upiApp: 'Paytm' },
+      ]);
+      showToast('Data default-e reset kora hoyeche!');
+    }
+  };
+
+  // Lock Screen Overlay Renderer
+  if (isLocked) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between items-center p-6 relative overflow-hidden select-none">
+        
+        {/* Background decorative grids */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/40 via-slate-950 to-slate-950 z-0"></div>
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 bg-emerald-500/10 blur-3xl rounded-full"></div>
+
+        {/* Header Block */}
+        <div className="z-10 text-center mt-8">
+          <div className="bg-gradient-to-tr from-emerald-400 to-indigo-500 p-3.5 rounded-3xl inline-block shadow-2xl mb-4 border border-indigo-500/30">
+            <PiggyBank className="text-slate-950" size={36} />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-indigo-300 bg-clip-text text-transparent">
+            Hisab-Nikesh Pro
+          </h1>
+          <p className="text-slate-400 text-xs mt-1">High Security Pattern/Fingerprint Lock Enabled</p>
+        </div>
+
+        {/* Lock Pattern Matrix */}
+        <div className="z-10 flex flex-col items-center justify-center my-auto">
+          <div className="mb-4 bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 text-xs text-center flex items-center gap-1.5 font-medium text-slate-300">
+            <Lock size={12} className="text-amber-500 animate-pulse" />
+            <span>{lockFeedback}</span>
+          </div>
+
+          {/* Touch ID / Simulated Fingerprint Selector */}
+          <div className="mb-6 flex gap-4">
+            <button 
+              type="button"
+              onClick={handleFingerprintSimulation}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-lg shadow-emerald-950/40 border border-emerald-400/20 cursor-pointer"
+            >
+              <Fingerprint size={16} />
+              Fingerprint/TouchID Unlock
+            </button>
+          </div>
+
+          {/* Interactive Pattern Grid */}
+          <div 
+            className="grid grid-cols-3 gap-6 bg-slate-900/60 p-8 rounded-3xl border border-slate-800/80 shadow-2xl relative"
+            onMouseLeave={() => isDrawing && endPattern()}
+          >
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+              const isSelected = patternInput.includes(num);
+              return (
+                <div
+                  key={num}
+                  className="w-16 h-16 flex items-center justify-center cursor-pointer relative"
+                  onMouseDown={() => startPattern(num)}
+                  onMouseEnter={() => handleDotInteraction(num)}
+                  onMouseUp={endPattern}
+                  onTouchStart={() => startPattern(num)}
+                  onTouchMove={(e) => {
+                    const touch = e.touches[0];
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (element && element.dataset.dot) {
+                      handleDotInteraction(parseInt(element.dataset.dot));
+                    }
+                  }}
+                  onTouchEnd={endPattern}
+                  data-dot={num}
+                >
+                  <div 
+                    data-dot={num}
+                    className={`w-6 h-6 rounded-full transition-all duration-150 ${
+                      isSelected 
+                        ? 'bg-emerald-400 scale-125 shadow-[0_0_15px_rgba(52,211,153,0.6)]' 
+                        : 'bg-slate-700 hover:bg-slate-600'
+                    }`}
+                  />
+                  {isSelected && (
+                    <div className="absolute inset-0 bg-emerald-500/10 rounded-full animate-ping pointer-events-none" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-6 text-center">
+            {isSettingPattern ? (
+              <p className="text-[10px] text-slate-500">Mase prothombar unlock korar jonne ekti secure layout set korun.</p>
+            ) : (
+              <button 
+                onClick={() => {
+                  setIsSettingPattern(true);
+                  setPatternInput([]);
+                  setLockFeedback('Nothun pattern track korun');
+                }}
+                className="text-xs text-indigo-400 hover:underline"
+              >
+                Reset Pattern Pin
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="z-10 text-center text-slate-600 text-[10px]">
+          🔒 Secure 256-bit simulated local pattern validation.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans pb-20 select-none">
+      
+      {/* Premium Toast Notifications */}
+      {toastMessage && (
+        <div className="fixed top-5 right-5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-2.5 z-50 animate-bounce border border-emerald-400/30">
+          <CheckCircle2 size={18} className="text-emerald-200" />
+          <span className="font-semibold text-xs tracking-wide">{toastMessage}</span>
+        </div>
+      )}
+
+      {/* App Header */}
+      <header className="bg-slate-900 border-b border-slate-800 sticky top-0 z-40 backdrop-blur-md bg-opacity-95">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          
+          <div className="flex items-center gap-3">
+            <div className="bg-gradient-to-tr from-emerald-400 to-teal-500 p-2.5 rounded-2xl shadow-lg border border-emerald-500/20">
+              <PiggyBank className="text-slate-950" size={24} />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent">
+                  Hisab-Nikesh Pro
+                </h1>
+                <span className="text-[10px] bg-indigo-500/10 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold uppercase tracking-wider">
+                  Secure
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400">Monthly auto-rollover active tracker</p>
+            </div>
+          </div>
+
+          {/* Navigation Options & Reset buttons */}
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+            <button 
+              onClick={() => setActiveTab('current')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition ${activeTab === 'current' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md shadow-emerald-500/10' : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700'}`}
+            >
+              Current Month
+            </button>
+            <button 
+              onClick={() => setActiveTab('history')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold tracking-wide transition ${activeTab === 'history' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 shadow-md' : 'bg-slate-800 hover:bg-slate-750 text-slate-300 border border-slate-700'}`}
+            >
+              History Archive
+            </button>
+            <button 
+              onClick={() => setIsLocked(true)}
+              className="p-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-300 border border-slate-700"
+              title="Lock Application Screen"
+            >
+              <Lock size={14} />
+            </button>
+            <button 
+              onClick={handleResetData}
+              className="p-2 bg-slate-800 hover:bg-rose-950/30 hover:text-rose-400 rounded-xl text-slate-400 border border-slate-700"
+              title="Reset Default Template"
+            >
+              <RotateCcw size={14} />
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="max-w-6xl mx-auto px-4 mt-6">
+        
+        {activeTab === 'current' ? (
+          /* CURRENT MONTH VIEW CONTAINER */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            {/* LEFT COLUMN: Main Salary & Summary Dashboard */}
+            <div className="lg:col-span-4 flex flex-col gap-6">
+              
+              {/* Main Salary State Card */}
+              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl relative overflow-hidden">
+                <div className="absolute -top-10 -right-10 w-24 h-24 bg-emerald-500/10 blur-xl rounded-full"></div>
+                
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
+                    <Wallet className="text-emerald-400" size={16} />
+                    Salary Balance
+                  </h2>
+                  <button 
+                    onClick={() => {
+                      setTempSalary(currentSalaryValue);
+                      setSalaryModalOpen(true);
+                    }}
+                    className="text-[10px] bg-slate-800 text-emerald-400 border border-slate-700 rounded-lg px-2.5 py-1 hover:bg-slate-700"
+                  >
+                    Edit Salary
+                  </button>
+                </div>
+
+                <div className="mb-2">
+                  <p className="text-3xl font-extrabold tracking-tight text-slate-100">
+                    ৳ {currentSalaryValue.toLocaleString()}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Mas (Month): <span className="text-indigo-400 font-bold uppercase">{currentMonthKey}</span>
+                  </p>
+                </div>
+
+                {/* Sub-balances displays for visual clarity */}
+                <div className="mt-4 pt-4 border-t border-slate-800 grid grid-cols-2 gap-2 text-center">
+                  <div className="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+                    <p className="text-[10px] text-slate-400">Cash Flow (Demo)</p>
+                    <p className="text-sm font-bold text-amber-500">৳ {cashSalary.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-slate-950/60 p-2 rounded-xl border border-slate-800/80">
+                    <p className="text-[10px] text-slate-400">PhonePe / Online</p>
+                    <p className="text-sm font-bold text-indigo-400">৳ {onlineSalary.toLocaleString()}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sub-Total calculation board */}
+              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                <h3 className="text-sm font-bold text-slate-200 border-b border-slate-800 pb-3 mb-3">
+                  Monthly Balance Ledger Sheet
+                </h3>
+
+                <div className="space-y-3.5 text-xs text-slate-300">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Salary Monthly:</span>
+                    <span className="font-semibold text-slate-200">৳ {currentSalaryValue}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400 flex items-center gap-1">
+                      Khorchapatir Ledger:
+                    </span>
+                    <span className="font-semibold text-rose-400">- ৳ {currentKhorchaVal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Dhar / Liabilities (Minus):</span>
+                    <span className="font-semibold text-amber-500">- ৳ {currentDharMinus}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Joma / Credit Deposits (Plus):</span>
+                    <span className="font-semibold text-indigo-400">+ ৳ {currentDharPlus}</span>
+                  </div>
+
+                  {/* Net Cash Dashboard */}
+                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 mt-4">
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mb-1">
+                      Final Net Balance
+                    </p>
+                    <div className="flex items-baseline justify-between">
+                      <span className={`text-2xl font-black ${currentNetPocketBalance >= 0 ? 'text-emerald-400' : 'text-rose-500'}`}>
+                        ৳ {currentNetPocketBalance.toLocaleString()}
+                      </span>
+                      <span className="text-[9px] text-emerald-400 bg-emerald-950/40 border border-emerald-900 px-2 py-0.5 rounded-full">
+                        Actual Cash
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* RIGHT COLUMN: Active Ledgers */}
+            <div className="lg:col-span-8 flex flex-col gap-6">
+              
+              {/* DHAR & JOMA LEDGER */}
+              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-200 flex items-center gap-1.5">
+                      <span className="text-amber-400">Dhar & Joma (Minus/Plus)</span>
+                    </h2>
+                    <p className="text-xs text-slate-400">Add plus transactions (Mom gave, etc) to boost net cash balance!</p>
+                  </div>
+                </div>
+
+                {/* Dhar Input form */}
+                <form onSubmit={handleAddDhar} className="bg-slate-950/60 p-4 rounded-xl border border-slate-850 grid grid-cols-1 md:grid-cols-12 gap-3 mb-6">
+                  <div className="md:col-span-4">
+                    <input 
+                      type="text" 
+                      placeholder="Note (E.g. Ma dilo, Dipom Vo)" 
+                      value={dharNote}
+                      onChange={(e) => setDharNote(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200"
+                    />
+                  </div>
+                  <div className="md:col-span-2 relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs">৳</span>
+                    <input 
+                      type="number" 
+                      placeholder="Amount" 
+                      value={dharAmount}
+                      onChange={(e) => setDharAmount(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-6 pr-2 py-2 text-xs text-slate-200"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <select 
+                      value={dharType} 
+                      onChange={(e) => setDharType(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 cursor-pointer"
+                    >
+                      <option value="minus">Dhar (Minus)</option>
+                      <option value="plus">Joma (Plus)</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <select 
+                      value={dharMethod} 
+                      onChange={(e) => setDharMethod(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 cursor-pointer"
+                    >
+                      <option value="cash">Cash Mode</option>
+                      <option value="online">PhonePe / UPI</option>
+                    </select>
+                  </div>
+                  <button 
+                    type="submit"
+                    className="md:col-span-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs py-2 px-3 flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> Add Entry
+                  </button>
+                </form>
+
+                {/* Table list */}
+                <div className="overflow-x-auto">
+                  {currentMonthDhar.length === 0 ? (
+                    <p className="text-center py-6 text-slate-500 text-xs italic">Kono transaction record nei.</p>
+                  ) : (
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                          <th className="py-2 px-1">Clear</th>
+                          <th className="py-2 px-1">Notes</th>
+                          <th className="py-2 px-1">Method</th>
+                          <th className="py-2 px-1 text-right">Amount</th>
+                          <th className="py-2 px-1 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentMonthDhar.map((item, idx) => (
+                          <tr 
+                            key={item.id} 
+                            className={`border-b border-slate-850/50 hover:bg-slate-900/40 transition ${item.isCompleted ? 'opacity-60 bg-emerald-950/10' : ''}`}
+                          >
+                            <td className="py-3 px-1">
+                              <button 
+                                type="button"
+                                onClick={() => triggerDharClear(item)}
+                                className={`w-8 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                                  item.isCompleted 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                    : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                                }`}
+                              >
+                                {item.isCompleted ? <Check size={12} strokeWidth={3} /> : (item.method === 'cash' ? 'C' : 'Pay')}
+                              </button>
+                            </td>
+                            <td className="py-3 px-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`font-semibold ${item.isCompleted ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                                  {idx + 1}. {item.note}
+                                </span>
+                                {item.isCompleted && (
+                                  <span className="text-[8px] bg-emerald-500/10 text-emerald-400 px-1 rounded-full">
+                                    Done {item.upiApp ? `(${item.upiApp})` : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-1">
+                              <span className={`text-[10px] font-medium uppercase ${item.method === 'cash' ? 'text-amber-400' : 'text-indigo-400'}`}>
+                                {item.method}
+                              </span>
+                            </td>
+                            <td className="py-3 px-1 text-right">
+                              <span className={`font-bold font-mono px-1.5 py-0.5 rounded ${item.isPlus ? 'text-indigo-400 bg-indigo-950/30' : 'text-amber-500 bg-amber-950/30'}`}>
+                                {item.isPlus ? '+' : '-'} ৳{item.amount}
+                              </span>
+                            </td>
+                            <td className="py-3 px-1 text-center">
+                              <button onClick={() => deleteDhar(item.id)} className="text-slate-500 hover:text-rose-400">
+                                <Trash2 size={12} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+
+              {/* KHORCHAPATIR LEDGER */}
+              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
+                  <div>
+                    <h2 className="text-lg font-bold text-slate-200 flex items-center gap-1.5">
+                      <span className="text-rose-400 font-extrabold">Khorchapatir Expense Log</span>
+                    </h2>
+                    <p className="text-xs text-slate-400">Directly deducts from your monthly net balance sheet</p>
+                  </div>
+                </div>
+
+                {/* Khorcha Input form */}
+                <form onSubmit={handleAddKhorcha} className="bg-slate-950/60 p-4 rounded-xl border border-slate-850 grid grid-cols-1 md:grid-cols-12 gap-3 mb-6">
+                  <div className="md:col-span-5">
+                    <input 
+                      type="text" 
+                      placeholder="Khorchar Note (E.g. Computer Table)" 
+                      value={khorchaNote}
+                      onChange={(e) => setKhorchaNote(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200"
+                    />
+                  </div>
+                  <div className="md:col-span-3 relative">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 text-xs">৳</span>
+                    <input 
+                      type="number" 
+                      placeholder="Amount" 
+                      value={khorchaAmount}
+                      onChange={(e) => setKhorchaAmount(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-6 pr-2 py-2 text-xs text-slate-200"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <select 
+                      value={khorchaMethod} 
+                      onChange={(e) => setKhorchaMethod(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-2 py-2 text-xs text-slate-200 cursor-pointer"
+                    >
+                      <option value="cash">Cash Mode</option>
+                      <option value="online">PhonePe / UPI</option>
+                    </select>
+                  </div>
+                  <button 
+                    type="submit"
+                    className="md:col-span-2 bg-rose-500 hover:bg-rose-600 text-slate-950 font-bold rounded-lg text-xs py-2 px-3 flex items-center justify-center gap-1"
+                  >
+                    <Plus size={12} /> Add
+                  </button>
+                </form>
+
+                {/* Khorcha Table list */}
+                <div className="overflow-x-auto">
+                  {currentMonthKhorcha.length === 0 ? (
+                    <p className="text-center py-6 text-slate-500 text-xs italic">Kono khorcha record nei.</p>
+                  ) : (
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-400 uppercase text-[10px]">
+                          <th className="py-2 px-1">Clear</th>
+                          <th className="py-2 px-1">Khorchar Details</th>
+                          <th className="py-2 px-1">Method</th>
+                          <th className="py-2 px-1 text-right">Amount</th>
+                          <th className="py-2 px-1 text-center">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentMonthKhorcha.map((item, idx) => (
+                          <tr 
+                            key={item.id} 
+                            className={`border-b border-slate-850/50 hover:bg-slate-900/40 transition ${item.isCompleted ? 'opacity-60 bg-emerald-950/10' : ''}`}
+                          >
+                            <td className="py-3 px-1">
+                              <button 
+                                type="button"
+                                onClick={() => triggerKhorchaClear(item)}
+                                className={`w-8 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${
+                                  item.isCompleted 
+                                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' 
+                                    : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                                }`}
+                              >
+                                {item.isCompleted ? <Check size={12} strokeWidth={3} /> : (item.method === 'cash' ? 'C' : 'Pay')}
+                              </button>
+                            </td>
+                            <td className="py-3 px-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`font-semibold ${item.isCompleted ? 'line-through text-slate-500' : 'text-slate-200'}`}>
+                                  {idx + 1}. {item.note}
+                                </span>
+                                {item.isCompleted && (
+                                  <span className="text-[8px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded-full">
+                                    Done {item.upiApp ? `(${item.upiApp})` : ''}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-1">
+                              <span className={`text-[10px] font-medium uppercase ${item.method === 'cash' ? 'text-amber-400' : 'text-indigo-400'}`}>
+                                {item.method}
+                              </span>
+                            </td>
+                            <td className="py-3 px-1 text-right text-rose-400 font-bold font-mono">
+                              ৳{item.amount}
+                            </td>
+                            <td className="py-3 px-1 text-center">
+                              <button onClick={() => deleteKhorcha(item.id)} className="text-slate-500 hover:text-rose-400">
+                                <Trash2 size={12} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        ) : (
+          /* HISTORY ARCHIVE SECTION */
+          <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-200 flex items-center gap-2">
+                  <History className="text-emerald-400" size={20} />
+                  System Archive History Lookup
+                </h2>
+                <p className="text-xs text-slate-400">Filter and retrieve complete transaction logs from previous months</p>
+              </div>
+            </div>
+
+            {/* Date Picker row */}
+            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1.5 font-medium">Start Date</label>
+                <input 
+                  type="date" 
+                  value={historyStartDate}
+                  onChange={(e) => setHistoryStartDate(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1.5 font-medium">End Date</label>
+                <input 
+                  type="date" 
+                  value={historyEndDate}
+                  onChange={(e) => setHistoryEndDate(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-200"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => {
+                    setHistoryStartDate('');
+                    setHistoryEndDate('');
+                  }}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2 rounded-lg border border-slate-700"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+
+            {/* Calculations widget for History */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <p className="text-[10px] text-slate-400 uppercase font-medium">Archived Expenses</p>
+                <p className="text-lg font-black text-rose-400">৳ {historyData.historyKhorcha.toLocaleString()}</p>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <p className="text-[10px] text-slate-400 uppercase font-medium">Archived Dhar (Minus)</p>
+                <p className="text-lg font-black text-amber-500">৳ {historyData.historyMinus.toLocaleString()}</p>
+              </div>
+              <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <p className="text-[10px] text-slate-400 uppercase font-medium">Archived Joma (Plus)</p>
+                <p className="text-lg font-black text-indigo-400">৳ {historyData.historyPlus.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* List entries layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* DHAR ARCHIVE */}
+              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-850">
+                <h3 className="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                  Dhar & Joma Archive
+                </h3>
+                <div className="max-h-80 overflow-y-auto space-y-2.5 pr-2">
+                  {historyData.dhars.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">No entries match filters.</p>
+                  ) : (
+                    historyData.dhars.map(item => (
+                      <div key={item.id} className="bg-slate-900 p-2.5 rounded-lg border border-slate-850 flex items-center justify-between text-xs">
+                        <div>
+                          <p className="font-semibold text-slate-200">{item.note}</p>
+                          <p className="text-[9px] text-slate-500 mt-0.5">{item.date} • {item.method.toUpperCase()}</p>
+                        </div>
+                        <span className={`font-mono font-bold ${item.isPlus ? 'text-indigo-400' : 'text-amber-500'}`}>
+                          {item.isPlus ? '+' : '-'} ৳{item.amount}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* KHORCHA ARCHIVE */}
+              <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-850">
+                <h3 className="text-sm font-bold text-slate-300 mb-3 flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                  Expense Khorcha Archive
+                </h3>
+                <div className="max-h-80 overflow-y-auto space-y-2.5 pr-2">
+                  {historyData.khorchas.length === 0 ? (
+                    <p className="text-xs text-slate-500 italic">No entries match filters.</p>
+                  ) : (
+                    historyData.khorchas.map(item => (
+                      <div key={item.id} className="bg-slate-900 p-2.5 rounded-lg border border-slate-850 flex items-center justify-between text-xs">
+                        <div>
+                          <p className="font-semibold text-slate-200">{item.note}</p>
+                          <p className="text-[9px] text-slate-500 mt-0.5">{item.date} • {item.method.toUpperCase()}</p>
+                        </div>
+                        <span className="font-mono font-bold text-rose-400">
+                          - ৳{item.amount}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+      </main>
+
+      {/* MODAL 1: First of the month Salary Manual Prompter */}
+      {salaryModalOpen && (
+        <div className="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative animate-in zoom-in-95 duration-150">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
+                <PiggyBank className="text-emerald-400" size={18} />
+                Nothun Maser Salary
+              </h3>
+              <button 
+                onClick={() => setSalaryModalOpen(false)}
+                className="text-slate-400 hover:text-slate-200"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <p className="text-xs text-slate-400 mb-4">
+              Nothun mas shuru hoyeche! Doya kore manually eii maser net Salary amount enter korun:
+            </p>
+
+            <form onSubmit={submitMonthlySalary} className="space-y-4">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400 font-bold">৳</span>
+                <input 
+                  type="number" 
+                  required
+                  placeholder="E.g. 11836" 
+                  value={tempSalary}
+                  onChange={(e) => setTempSalary(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-4 py-2.5 text-lg font-extrabold text-slate-100"
+                />
+              </div>
+              <button 
+                type="submit"
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-slate-950 font-black rounded-xl py-2.5 text-xs transition duration-150 shadow-lg"
+              >
+                Salary Set Korun 🚀
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 2: Simulated Payment Gateway App Router */}
+      {paymentModalOpen && activePaymentItem && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl relative overflow-hidden animate-in zoom-in-95">
+            
+            {/* Header */}
+            <div className="flex justify-between items-center mb-4 pb-2 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-slate-200 flex items-center gap-2">
+                <Smartphone className="text-indigo-400 animate-pulse" size={16} />
+                Simulated UPI App Portal
+              </h3>
+              <button onClick={() => setPaymentModalOpen(false)} className="text-slate-400 hover:text-slate-200">
+                <X size={16} />
+              </button>
+            </div>
+
+            {simulatedPayingState === 'select' && (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-400">
+                  Choose payment app to process <span className="text-slate-200 font-bold">৳{activePaymentItem.amount}</span> for "{activePaymentItem.note}":
+                </p>
+                <div className="grid grid-cols-1 gap-2.5">
+                  {[
+                    { name: 'PhonePe', color: 'bg-indigo-600 hover:bg-indigo-700', icon: '🟣' },
+                    { name: 'Google Pay', color: 'bg-blue-600 hover:bg-blue-700', icon: '🔵' },
+                    { name: 'Paytm Wallet', color: 'bg-sky-600 hover:bg-sky-700', icon: '🌐' },
+                    { name: 'Amazon Pay', color: 'bg-orange-600 hover:bg-orange-700', icon: '🟠' }
+                  ].map((app) => (
+                    <button 
+                      key={app.name}
+                      onClick={() => handleProcessSimulatedPayment(app.name)}
+                      className={`w-full ${app.color} text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-between transition transform hover:-translate-y-0.5`}
+                    >
+                      <span className="flex items-center gap-2">
+                        <span className="text-base">{app.icon}</span>
+                        {app.name} Link Direction
+                      </span>
+                      <ArrowRight size={14} />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {simulatedPayingState === 'processing' && (
+              <div className="text-center py-10 space-y-4">
+                <div className="w-12 h-12 border-4 border-indigo-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div>
+                  <p className="text-sm font-bold text-slate-200">Connecting with secure {selectedUpiApp} server...</p>
+                  <p className="text-[10px] text-slate-500 mt-1">Authenticating encrypted token. Please wait...</p>
+                </div>
+              </div>
+            )}
+
+            {simulatedPayingState === 'success' && (
+              <div className="text-center py-10 space-y-4">
+                <div className="w-16 h-16 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                  <Check size={32} strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-base font-extrabold text-emerald-400">Payment Successful! ✅</p>
+                  <p className="text-xs text-slate-400 mt-1">৳{activePaymentItem.amount} settled via {selectedUpiApp}.</p>
+                </div>
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+```
