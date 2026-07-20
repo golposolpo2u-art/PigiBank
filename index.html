@@ -1,0 +1,1263 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PigiBank</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons for Premium Look -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* CSS Variables with 100% Solid Opacity & Absolute Contrast Colors */
+        :root {
+            --bg-main: #f8fafc; /* slate-50 */
+            --bg-card: #ffffff;
+            --bg-inner: #f1f5f9; /* slate-100 */
+            --text-main: #090d16; /* Solid rich dark slate */
+            --text-muted: #1e293b; /* 100% solid slate-800 instead of slate-500 */
+            --border-color: #cbd5e1; /* slate-300 for clearer borders */
+            --primary-gradient: linear-gradient(135deg, #3730a3 0%, #5b21b6 100%); /* Deep rich indigo-violet */
+            --shadow-intensity: rgba(15, 23, 42, 0.06);
+            --shadow-card: 0 10px 25px -5px var(--shadow-intensity), 0 8px 10px -6px var(--shadow-intensity);
+        }
+
+        body.dark {
+            --bg-main: #020617; /* slate-950 */
+            --bg-card: #0f172a; /* slate-900 */
+            --bg-inner: #1e293b; /* slate-800 */
+            --text-main: #ffffff; /* Solid white */
+            --text-muted: #e2e8f0; /* Solid light slate-200 */
+            --border-color: #334155; /* slate-700 */
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --shadow-intensity: rgba(0, 0, 0, 0.4);
+            --shadow-card: 0 10px 25px -5px var(--shadow-intensity);
+        }
+
+        /* Mapping Theme Variables */
+        .themed-bg-main { background-color: var(--bg-main); }
+        .themed-bg-card { background-color: var(--bg-card); }
+        .themed-bg-inner { background-color: var(--bg-inner); }
+        .themed-text-main { color: var(--text-main); }
+        .themed-text-muted { color: var(--text-muted); }
+        .themed-border { border-color: var(--border-color); }
+        .themed-shadow { box-shadow: var(--shadow-card); }
+        .themed-btn-primary { background: var(--primary-gradient); color: #ffffff; }
+
+        .bounce-in {
+            animation: bounceIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="themed-bg-main themed-text-main font-sans min-h-screen pb-24 select-none overflow-x-hidden transition-colors duration-300">
+
+    <!-- TOAST NOTIFICATION BOX -->
+    <div id="toast" class="fixed top-5 right-5 bg-slate-900 text-white dark:bg-white dark:text-slate-950 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 hidden border border-slate-800/20 dark:border-slate-100/20">
+        <i class="fa-solid fa-circle-check text-indigo-500 text-lg"></i>
+        <span id="toast-text" class="font-bold text-sm tracking-wide">Dynamic Message</span>
+    </div>
+
+    <!-- LOCK SCREEN OVERLAY (STARTUP PIN PROTECTION) -->
+    <div id="lock-screen" class="fixed inset-0 bg-slate-950 z-50 flex flex-col justify-between items-center p-6 overflow-hidden hidden">
+        <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-950/50 via-slate-950 to-slate-950 pointer-events-none"></div>
+        
+        <!-- App Title and Brand -->
+        <div class="z-10 text-center mt-8">
+            <div class="bg-indigo-650/15 p-4 rounded-2xl inline-block shadow-2xl mb-3 border border-indigo-500/30">
+                <i class="fa-solid fa-piggy-bank text-indigo-400 text-3xl animate-pulse"></i>
+            </div>
+            <h1 class="text-3xl font-black tracking-tight text-white">
+                PigiBank Secure
+            </h1>
+            <p class="text-slate-400 text-xs mt-1">Application locked via secure client PIN</p>
+        </div>
+
+        <!-- Lock feedback label -->
+        <div class="z-10 flex flex-col items-center gap-3">
+            <div id="lock-feedback" class="bg-slate-900/90 px-5 py-2.5 rounded-full border border-slate-800 text-sm text-center flex items-center gap-2 font-bold text-slate-200 shadow-xl">
+                <i class="fa-solid fa-lock text-amber-500" id="lock-icon-indicator"></i>
+                <span id="lock-feedback-text">Enter 4-Digit Secure PIN</span>
+            </div>
+
+            <!-- PIN dots display -->
+            <div class="flex gap-4 my-2">
+                <div id="pin-dot-1" class="w-4 h-4 rounded-full bg-slate-800 border border-slate-700 transition-all"></div>
+                <div id="pin-dot-2" class="w-4 h-4 rounded-full bg-slate-800 border border-slate-700 transition-all"></div>
+                <div id="pin-dot-3" class="w-4 h-4 rounded-full bg-slate-800 border border-slate-700 transition-all"></div>
+                <div id="pin-dot-4" class="w-4 h-4 rounded-full bg-slate-800 border border-slate-700 transition-all"></div>
+            </div>
+        </div>
+
+        <!-- PIN Keyboard matrix -->
+        <div class="z-10 w-full max-w-xs flex flex-col items-center mb-8">
+            <div class="grid grid-cols-3 gap-4 w-72">
+                <button onclick="pressPinKey('1')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">1</button>
+                <button onclick="pressPinKey('2')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">2</button>
+                <button onclick="pressPinKey('3')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">3</button>
+                <button onclick="pressPinKey('4')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">4</button>
+                <button onclick="pressPinKey('5')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">5</button>
+                <button onclick="pressPinKey('6')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">6</button>
+                <button onclick="pressPinKey('7')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">7</button>
+                <button onclick="pressPinKey('8')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">8</button>
+                <button onclick="pressPinKey('9')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">9</button>
+                <button onclick="clearPinInput()" class="bg-slate-950 hover:bg-slate-900 active:scale-95 text-rose-500 font-extrabold w-16 h-16 rounded-full flex items-center justify-center text-sm transition">CLR</button>
+                <button onclick="pressPinKey('0')" class="bg-slate-900 hover:bg-slate-850 active:scale-95 text-white font-bold w-16 h-16 rounded-full border border-slate-800 flex items-center justify-center text-xl transition">0</button>
+                <button onclick="deletePinLastChar()" class="bg-slate-950 hover:bg-slate-900 active:scale-95 text-amber-500 font-bold w-16 h-16 rounded-full flex items-center justify-center text-lg transition">
+                    <i class="fa-solid fa-delete-left"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APPLICATION WORKSPACE -->
+    <div id="main-app" class="block">
+        <!-- App Header -->
+        <header class="themed-bg-card themed-border border-b sticky top-0 z-40 backdrop-blur-md bg-opacity-95 transition-colors duration-300">
+            <div class="max-w-6xl mx-auto px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-5">
+                <div class="flex items-center gap-4">
+                    <!-- Icon container with Soft brand color -->
+                    <div class="p-3 rounded-2xl themed-shadow themed-border border themed-bg-inner flex items-center justify-center">
+                        <i class="fa-solid fa-piggy-bank text-indigo-700 dark:text-indigo-400 text-2xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2.5">
+                            <h1 class="text-2xl sm:text-3xl font-black tracking-tight bg-gradient-to-r from-indigo-700 to-violet-700 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent">
+                                PigiBank
+                            </h1>
+                            <span class="text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/20 font-bold uppercase tracking-wider">
+                                Active
+                            </span>
+                        </div>
+                        <p class="text-xs sm:text-sm themed-text-muted mt-0.5 font-bold">Monthly auto-rollover active tracker</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs & Theme Toggle -->
+                <div class="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+                    <!-- Theme Toggle Button -->
+                    <button id="theme-toggle-btn" onclick="toggleTheme()" class="p-3 themed-bg-inner hover:opacity-80 rounded-xl themed-text-main themed-border border transition flex items-center justify-center text-lg font-bold" title="Theme Toggle">
+                        <i id="theme-icon" class="fa-solid fa-moon"></i>
+                    </button>
+                    
+                    <!-- Security / PIN Settings Button -->
+                    <button onclick="openSecuritySettingsModal()" class="p-3 themed-bg-inner hover:opacity-80 rounded-xl themed-text-main themed-border border transition flex items-center justify-center text-lg font-bold" title="PIN Lock Settings">
+                        <i class="fa-solid fa-shield-halved text-indigo-700 dark:text-indigo-400"></i>
+                    </button>
+
+                    <button id="tab-current" onclick="switchTab('current')" class="px-5 py-3 rounded-xl text-sm font-bold tracking-wide transition themed-btn-primary shadow-lg shadow-indigo-500/10 hover:opacity-90">
+                        Current Month
+                    </button>
+                    <button id="tab-history" onclick="switchTab('history')" class="px-5 py-3 rounded-xl text-sm font-bold tracking-wide transition themed-bg-inner themed-text-main themed-border border hover:opacity-90">
+                        History Archive
+                    </button>
+                    <button onclick="resetDataToTemplate()" class="p-3 themed-bg-inner hover:bg-rose-500 hover:text-white rounded-xl themed-text-muted themed-border border transition flex items-center justify-center text-lg font-bold" title="Clear All Data">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Container -->
+        <main class="max-w-6xl mx-auto px-4 mt-8">
+            
+            <!-- Tab 1: Current Month Content -->
+            <div id="content-current" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Left Sidebar Cards -->
+                <div class="lg:col-span-5 flex flex-col gap-8">
+                    <!-- Salary Card (Soft Mint / Emerald Background with solid text) -->
+                    <div class="bg-emerald-50 border-emerald-300 dark:bg-emerald-950/20 dark:border-emerald-900 p-6 rounded-2xl border shadow-md shadow-emerald-100/30 relative overflow-hidden transition-all duration-300">
+                        <div class="absolute -top-10 -right-10 w-24 h-24 bg-emerald-500/10 blur-xl rounded-full"></div>
+                        <div class="flex justify-between items-center mb-5">
+                          <h2 class="text-base sm:text-lg font-black text-emerald-900 dark:text-emerald-400 flex items-center gap-2">
+                            <i class="fa-solid fa-wallet text-emerald-600 text-lg"></i>
+                            Salary Balance
+                          </h2>
+                          <button onclick="openSalaryModal()" class="text-xs bg-emerald-200 hover:bg-emerald-300 dark:bg-emerald-900/60 text-emerald-950 dark:text-emerald-100 border border-emerald-450 dark:border-emerald-800 rounded-lg px-3 py-2 transition font-black font-sans">
+                            Edit Salary
+                          </button>
+                        </div>
+                        <div class="mb-4">
+                          <p class="text-4xl sm:text-5xl font-black tracking-tight text-emerald-950 dark:text-emerald-50" id="current-salary-display">₹ 0</p>
+                          <p class="text-xs sm:text-sm text-emerald-900 dark:text-emerald-300 mt-1.5 font-bold">
+                            Month: <span class="text-emerald-955 dark:text-emerald-300 font-black uppercase" id="current-month-display">YYYY-MM</span>
+                          </p>
+                        </div>
+                        <div class="mt-5 pt-5 border-t border-emerald-300 dark:border-emerald-900 grid grid-cols-2 gap-3 text-center">
+                          <div class="bg-white dark:bg-slate-900/70 p-3 rounded-xl border border-emerald-200 dark:border-emerald-950">
+                            <p class="text-xs text-emerald-955 dark:text-emerald-300 font-extrabold">Cash Flow (Est.)</p>
+                            <p class="text-base sm:text-lg font-black text-amber-700 dark:text-amber-400" id="cash-flow-display">₹ 0</p>
+                          </div>
+                          <div class="bg-white dark:bg-slate-900/70 p-3 rounded-xl border border-emerald-200 dark:border-emerald-950">
+                            <p class="text-xs text-emerald-955 dark:text-emerald-300 font-extrabold">Online / UPI</p>
+                            <p class="text-base sm:text-lg font-black text-indigo-700 dark:text-indigo-400" id="online-flow-display">₹ 0</p>
+                          </div>
+                        </div>
+                    </div>
+
+                    <!-- Ledger Score Card -->
+                    <div class="bg-sky-50 border-sky-300 dark:bg-indigo-950/20 dark:border-indigo-900 p-6 rounded-2xl border shadow-md shadow-sky-100/30 transition-all duration-300">
+                        <h3 class="text-base sm:text-lg font-black text-sky-950 dark:text-sky-300 border-b border-sky-300 dark:border-indigo-900 pb-4 mb-4">
+                          Monthly Balance Ledger Sheet
+                        </h3>
+                        <div class="space-y-4 text-sm sm:text-base text-slate-950 dark:text-slate-50 font-bold">
+                          <div class="flex justify-between">
+                            <span class="text-sky-900 dark:text-slate-300">Base Salary:</span>
+                            <span class="font-black text-sky-950 dark:text-slate-100" id="ledger-salary">₹ 0</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-sky-900 dark:text-slate-300">Expenses Ledger:</span>
+                            <span class="font-black text-rose-700 dark:text-rose-450" id="ledger-khorcha">- ₹ 0</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-sky-900 dark:text-slate-300">Debts / Liabilities (Minus):</span>
+                            <span class="font-black text-amber-700 dark:text-amber-450" id="ledger-dhar-minus">- ₹ 0</span>
+                          </div>
+                          <div class="flex justify-between">
+                            <span class="text-sky-900 dark:text-slate-300">Deposits / Credits (Plus):</span>
+                            <span class="font-black text-indigo-700 dark:text-indigo-400" id="ledger-dhar-plus">+ ₹ 0</span>
+                          </div>
+                          <div class="bg-white dark:bg-slate-900/70 p-5 rounded-xl border border-sky-200 dark:border-indigo-950 mt-5">
+                            <p class="text-xs text-sky-955 dark:text-slate-200 font-black uppercase tracking-wider mb-1.5">Final Net Balance</p>
+                            <div class="flex items-baseline justify-between gap-2">
+                              <span class="text-3xl sm:text-4xl font-black text-emerald-700 dark:text-emerald-400" id="ledger-net-balance">₹ 0</span>
+                              <span class="text-xs text-emerald-800 dark:text-emerald-400 bg-emerald-500/20 border border-emerald-500/30 px-3 py-1 rounded-full font-black">Actual Cash</span>
+                            </div>
+                          </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Table Logs -->
+                <div class="lg:col-span-7 flex flex-col gap-8">
+                    <!-- Dhar Section -->
+                    <div class="bg-amber-50 border-amber-300 dark:bg-amber-950/15 dark:border-amber-900 p-6 rounded-2xl border shadow-md shadow-amber-100/20 transition-all duration-300">
+                        <div class="mb-5">
+                            <h2 class="text-lg sm:text-xl font-black text-amber-955 dark:text-amber-400 flex items-center gap-1.5">
+                                <span class="text-amber-700 dark:text-amber-455">Debts & Deposits (Minus/Plus)</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-amber-900 dark:text-slate-300 mt-0.5 font-bold">Add adjustments to track outside payments or external money imports.</p>
+                        </div>
+
+                        <!-- Dhar Add Form -->
+                        <form id="dhar-form" onsubmit="addDharEntry(event)" class="bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-amber-300 dark:border-amber-950 flex flex-col sm:grid sm:grid-cols-12 gap-3 mb-6">
+                            <div class="sm:col-span-4">
+                                <input id="dhar-note" type="text" placeholder="Note (e.g., Loan, Rent)" required class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm themed-text-main font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            </div>
+                            <div class="sm:col-span-3 relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">₹</span>
+                                <input id="dhar-amount" type="number" placeholder="Amount" required class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg pl-7 pr-2.5 py-2.5 text-sm themed-text-main font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono">
+                            </div>
+                            <div class="sm:col-span-3">
+                                <select id="dhar-type" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-2.5 text-sm themed-text-main font-bold cursor-pointer focus:outline-none">
+                                    <option value="minus">Debt (Minus)</option>
+                                    <option value="plus">Deposit (Plus)</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <select id="dhar-method" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-2.5 text-sm themed-text-main font-bold cursor-pointer focus:outline-none">
+                                    <option value="cash">Cash</option>
+                                    <option value="online">UPI</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="sm:col-span-12 w-full themed-btn-primary hover:opacity-90 font-black rounded-lg text-sm py-3.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-indigo-500/10 transition mt-1 sm:mt-0">
+                                <i class="fa-solid fa-plus text-xs"></i> Add Debt / Deposit Entry
+                            </button>
+                        </form>
+
+                        <!-- Dhar Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm sm:text-base">
+                                <thead>
+                                    <tr class="border-b border-amber-300 dark:border-amber-900 text-amber-955 dark:text-slate-200 uppercase text-xs tracking-wider font-black">
+                                        <th class="py-3 px-1 w-16">Settle</th>
+                                        <th class="py-3 px-1">Notes</th>
+                                        <th class="py-3 px-1">Method</th>
+                                        <th class="py-3 px-1 text-right">Amount</th>
+                                        <th class="py-3 px-1 text-center w-16">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dhar-table-body">
+                                    <!-- Dynamic rows loaded by JS -->
+                                </tbody>
+                            </table>
+                            <div id="dhar-empty-state" class="text-center py-8 text-amber-955 dark:text-slate-300 text-sm font-bold italic hidden">No transactions recorded yet.</div>
+                        </div>
+                    </div>
+
+                    <!-- Khorcha Section -->
+                    <div class="bg-rose-50 border-rose-300 dark:bg-rose-955/15 dark:border-rose-900 p-6 rounded-2xl border shadow-md shadow-rose-100/20 transition-all duration-300">
+                        <div class="mb-5">
+                            <h2 class="text-lg sm:text-xl font-black text-rose-955 dark:text-rose-455 flex items-center gap-1.5">
+                                <span class="text-rose-700 dark:text-rose-400">Monthly Expense Log</span>
+                            </h2>
+                            <p class="text-xs sm:text-sm text-rose-900 dark:text-slate-300 mt-0.5 font-bold">Directly deducts from your monthly net balance sheet.</p>
+                        </div>
+
+                        <!-- Khorcha Form -->
+                        <form id="khorcha-form" onsubmit="addKhorchaEntry(event)" class="bg-white dark:bg-slate-900/50 p-4 rounded-xl border border-rose-300 dark:border-rose-955 flex flex-col sm:grid sm:grid-cols-12 gap-3 mb-6">
+                            <div class="sm:col-span-6">
+                                <input id="khorcha-note" type="text" placeholder="Expense Detail (e.g., Groceries, Fuel)" required class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm themed-text-main font-bold focus:outline-none focus:ring-1 focus:ring-rose-500">
+                            </div>
+                            <div class="sm:col-span-3 relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-sm font-bold">₹</span>
+                                <input id="khorcha-amount" type="number" placeholder="Amount" required class="w-full bg-slate-100 dark:bg-slate-955 border border-slate-300 dark:border-slate-800 rounded-lg pl-7 pr-2.5 py-2.5 text-sm themed-text-main font-bold focus:outline-none focus:ring-1 focus:ring-rose-500 font-mono">
+                            </div>
+                            <div class="sm:col-span-3">
+                                <select id="khorcha-method" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-2.5 py-2.5 text-sm themed-text-main font-bold cursor-pointer focus:outline-none">
+                                    <option value="cash">Cash</option>
+                                    <option value="online">UPI</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="sm:col-span-12 w-full bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl text-sm py-3.5 px-4 flex items-center justify-center gap-2 shadow-md shadow-rose-500/10 transition mt-1 sm:mt-0">
+                                <i class="fa-solid fa-plus text-xs"></i> Add Expense
+                              </button>
+                        </form>
+
+                        <!-- Khorcha Table -->
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm sm:text-base">
+                                <thead>
+                                    <tr class="border-b border-rose-300 dark:border-rose-900 text-rose-955 dark:text-slate-200 uppercase text-xs tracking-wider font-black">
+                                        <th class="py-3 px-1 w-16">Settle</th>
+                                        <th class="py-3 px-1">Expense Details</th>
+                                        <th class="py-3 px-1">Method</th>
+                                        <th class="py-3 px-1 text-right">Amount</th>
+                                        <th class="py-3 px-1 text-center w-16">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="khorcha-table-body">
+                                    <!-- Dynamic rows loaded by JS -->
+                                </tbody>
+                            </table>
+                            <div id="khorcha-empty-state" class="text-center py-8 text-rose-955 dark:text-slate-300 text-sm font-bold italic hidden">No expenses logged yet.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: History Archive Content -->
+            <div id="content-history" class="bg-violet-50 border-violet-300 dark:bg-violet-955/15 dark:border-violet-900 p-6 rounded-2xl border shadow-md shadow-violet-100/20 hidden transition-colors duration-300">
+                <div class="flex items-center justify-between border-b border-violet-300 dark:border-violet-900 pb-5 mb-6">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-black text-violet-955 dark:text-purple-300 flex items-center gap-2">
+                            <i class="fa-solid fa-history text-indigo-700 text-xl"></i>
+                            System Archive History Lookup
+                        </h2>
+                        <p class="text-xs sm:text-sm text-violet-900 dark:text-slate-200 mt-1 font-bold">Filter and retrieve complete transaction logs from previous months.</p>
+                    </div>
+                </div>
+
+                <!-- Range picker inputs -->
+                <div class="bg-white dark:bg-slate-900/50 p-5 rounded-xl border border-violet-300 dark:border-violet-950 grid grid-cols-1 md:grid-cols-3 gap-5 items-end mb-6">
+                    <div>
+                        <label class="block text-xs sm:text-sm text-violet-955 dark:text-slate-200 mb-2 font-black">Start Date</label>
+                        <input id="history-start-date" type="date" onchange="filterHistory()" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm themed-text-main font-bold focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs sm:text-sm text-violet-955 dark:text-slate-200 mb-2 font-black">End Date</label>
+                        <input id="history-end-date" type="date" onchange="filterHistory()" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-lg px-3 py-2.5 text-sm themed-text-main font-bold focus:outline-none">
+                    </div>
+                    <div>
+                        <button onclick="clearHistoryFilters()" class="w-full bg-slate-200 dark:bg-slate-800 hover:opacity-80 themed-text-main text-sm font-black py-3 rounded-lg themed-border border transition">
+                            Clear Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Archive values calculation cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-6 font-bold">
+                    <div class="bg-white dark:bg-slate-900/50 p-5 rounded-xl border border-violet-200 dark:border-violet-950">
+                        <p class="text-xs text-violet-955 dark:text-slate-200 uppercase font-black">Archived Expenses</p>
+                        <p id="history-calc-khorcha" class="text-xl sm:text-2xl font-black text-rose-700 dark:text-rose-400 mt-1 font-mono font-bold">₹ 0</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900/50 p-5 rounded-xl border border-violet-200 dark:border-violet-950">
+                        <p class="text-xs text-violet-955 dark:text-slate-200 uppercase font-black">Archived Debts (Minus)</p>
+                        <p id="history-calc-minus" class="text-xl sm:text-2xl font-black text-amber-500 dark:text-amber-400 mt-1 font-mono font-bold">₹ 0</p>
+                    </div>
+                    <div class="bg-white dark:bg-slate-900/50 p-5 rounded-xl border border-violet-200 dark:border-violet-950">
+                        <p class="text-xs text-violet-955 dark:text-slate-200 uppercase font-black">Archived Deposits (Plus)</p>
+                        <p id="history-calc-plus" class="text-xl sm:text-2xl font-black text-indigo-700 dark:text-indigo-400 mt-1 font-mono font-bold">₹ 0</p>
+                    </div>
+                </div>
+
+                <!-- Split panels for Dhar and Khorcha lists -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white dark:bg-slate-900/30 p-5 rounded-xl border border-violet-300 dark:border-violet-950">
+                        <h3 class="text-sm sm:text-base font-black text-violet-955 dark:text-purple-300 mb-4 flex items-center gap-2.5">
+                            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+                            Debts & Deposits Archive
+                        </h3>
+                        <div id="history-dhar-list" class="max-h-96 overflow-y-auto space-y-3 pr-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <div class="bg-white dark:bg-slate-900/30 p-5 rounded-xl border border-violet-300 dark:border-violet-950">
+                        <h3 class="text-sm sm:text-base font-black text-violet-955 dark:text-purple-300 mb-4 flex items-center gap-2.5">
+                            <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                            Expenses Archive
+                        </h3>
+                        <div id="history-khorcha-list" class="max-h-96 overflow-y-auto space-y-3 pr-2">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- MODAL 1: Month Salary Prompt -->
+    <div id="salary-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm hidden">
+        <div class="themed-bg-card themed-border border rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative bounce-in transition-colors duration-300">
+            <div class="flex justify-between items-center mb-5">
+                <h3 class="text-lg sm:text-xl font-black themed-text-main flex items-center gap-2.5">
+                    <i class="fa-solid fa-piggy-bank text-indigo-500 text-xl"></i>
+                    New Month Salary
+                </h3>
+                <button onclick="dismissSalaryModal()" class="themed-text-muted hover:themed-text-main text-lg p-1 font-black" title="Close Prompt">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <p class="text-sm themed-text-muted mb-5 font-bold font-sans">
+                Please configure your base Net Salary for this month to activate tracking:
+            </p>
+
+            <form onsubmit="saveMonthlySalary(event)" class="space-y-5">
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-indigo-600 font-black text-lg">₹</span>
+                    <input id="salary-input" type="number" required placeholder="E.g. 15000" class="w-full themed-bg-inner themed-border border rounded-xl pl-9 pr-4 py-3.5 text-xl font-extrabold themed-text-main focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono">
+                </div>
+                <div class="flex items-center gap-3">
+                    <button type="submit" class="flex-1 themed-btn-primary font-black rounded-xl py-3.5 text-sm transition duration-150 shadow-lg shadow-indigo-500/10">
+                        Set Base Salary 🚀
+                    </button>
+                    <button type="button" onclick="dismissSalaryModal()" class="px-5 py-3.5 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl font-bold text-sm">
+                        Maybe Later
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Simulated UPI Payment Flow Gateway -->
+    <div id="payment-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md hidden">
+        <div class="themed-bg-card themed-border border rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative overflow-hidden bounce-in transition-colors duration-300">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-5 pb-3 border-b themed-border">
+                <h3 class="text-base sm:text-lg font-black themed-text-main flex items-center gap-2">
+                    <i class="fa-solid fa-mobile-screen text-indigo-600 animate-pulse text-lg"></i>
+                    Simulated UPI App Portal
+                </h3>
+                <button onclick="closePaymentModal()" class="themed-text-muted hover:themed-text-main text-lg p-1 font-black">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Content Area 1: Selection -->
+            <div id="pay-screen-select" class="space-y-5">
+                <p class="text-sm themed-text-muted font-bold">
+                    Choose payment app to process <span id="pay-amount-label" class="themed-text-main font-black font-mono">₹ 0</span> for "<span id="pay-note-label" class="font-extrabold font-sans">Item</span>":
+                </p>
+                <div class="grid grid-cols-1 gap-3">
+                    <button onclick="processAppPayment('PhonePe')" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 px-5 rounded-xl text-sm flex items-center justify-between transition">
+                        <span class="flex items-center gap-3">🟣 PhonePe Link Direction</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                    <button onclick="processAppPayment('Google Pay')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-4 px-5 rounded-xl text-sm flex items-center justify-between transition">
+                        <span class="flex items-center gap-3">🔵 Google Pay Link Direction</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                    <button onclick="processAppPayment('Paytm Wallet')" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-black py-4 px-5 rounded-xl text-sm flex items-center justify-between transition">
+                        <span class="flex items-center gap-3">🌐 Paytm Wallet Link</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                    <button onclick="processAppPayment('Amazon Pay')" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-black py-4 px-5 rounded-xl text-xs flex items-center justify-between transition">
+                        <span class="flex items-center gap-3">🟠 Amazon Pay Link</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Content Area 2: Spinner processing -->
+            <div id="pay-screen-processing" class="text-center py-12 space-y-4 hidden">
+                <div class="w-14 h-14 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div>
+                    <p class="text-base font-black themed-text-main">Connecting with secure server...</p>
+                    <p class="text-xs themed-text-muted mt-1.5 font-bold">Authenticating encrypted token. Please wait...</p>
+                </div>
+            </div>
+
+            <!-- Content Area 3: Success banner -->
+            <div id="pay-screen-success" class="text-center py-12 space-y-4 hidden">
+                <div class="w-16 h-16 bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto animate-bounce">
+                    <i class="fa-solid fa-check text-2xl"></i>
+                </div>
+                <div>
+                    <p class="text-lg font-black text-emerald-600">Payment Successful! ✅</p>
+                    <p id="pay-success-description" class="text-xs sm:text-sm themed-text-muted mt-1.5 font-bold">Settled successfully.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: SECURITY / PIN CONFIGURATION MODAL -->
+    <div id="security-settings-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm hidden">
+        <div class="themed-bg-card themed-border border rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl relative bounce-in transition-colors duration-300">
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-5 border-b themed-border pb-3">
+                <h3 class="text-lg sm:text-xl font-black themed-text-main flex items-center gap-2.5">
+                    <i class="fa-solid fa-shield-halved text-indigo-700 dark:text-indigo-400"></i>
+                    PIN Lock Configurations
+                </h3>
+                <button onclick="closeSecuritySettingsModal()" class="themed-text-muted hover:themed-text-main text-lg p-1 font-black">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Settings Options Panel -->
+            <div id="security-main-options" class="space-y-5">
+                <div class="themed-bg-inner p-4 rounded-2xl border themed-border">
+                    <label class="flex items-center justify-between cursor-pointer">
+                        <div>
+                            <span class="text-sm sm:text-base font-black themed-text-main block">Enable PIN Lock on Startup</span>
+                            <span class="text-xs themed-text-muted block mt-0.5">Asks for PIN authentication on app startup</span>
+                        </div>
+                        <div class="relative">
+                            <input type="checkbox" id="lock-toggle" onchange="toggleLockFeature()" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-300 dark:bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-650"></div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button onclick="showSetPinSection()" class="w-full bg-slate-200 dark:bg-slate-800 hover:opacity-85 text-sm font-black py-3 rounded-xl transition themed-text-main">
+                        <i class="fa-solid fa-key mr-2"></i>Configure/Update Secure PIN
+                    </button>
+                    <button id="lock-now-btn" onclick="lockAppImmediately()" class="w-full bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-sm font-black py-3 rounded-xl transition border border-rose-500/20 hidden">
+                        <i class="fa-solid fa-lock mr-2"></i>Lock Application Now
+                    </button>
+                </div>
+            </div>
+
+            <!-- PIN Set/Change Form Container -->
+            <div id="security-pin-form-container" class="space-y-4 hidden">
+                <p class="text-sm themed-text-muted font-bold">Configure your secret 4-digit PIN:</p>
+                <div class="relative">
+                    <input id="new-pin-input" type="password" maxlength="4" placeholder="Enter 4-Digit PIN" class="w-full themed-bg-inner themed-border border rounded-xl px-4 py-3 text-lg font-black text-center themed-text-main focus:outline-none tracking-[1em] font-mono">
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="saveNewPin()" class="flex-1 themed-btn-primary font-black rounded-xl py-3 text-sm transition shadow-lg shadow-indigo-500/10">
+                        Save PIN 🚀
+                    </button>
+                    <button onclick="hideSetPinSection()" class="flex-1 bg-slate-200 dark:bg-slate-800 font-bold rounded-xl py-3 text-sm themed-text-main">
+                        Back
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- CORE APPLICATION JAVASCRIPT LOGIC -->
+    <script>
+        // Web Audio sounds synthesize korar logic
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playSound(type) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'tick') {
+                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.08);
+                } else if (type === 'success') {
+                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
+                    osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.3); 
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.4);
+                } else if (type === 'error') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.35);
+                }
+            } catch(e) { console.log("Audio context blocked or unsupported"); }
+        }
+
+        // Theme Toggle system (By default light theme)
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            const icon = document.getElementById('theme-icon');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark');
+                icon.className = "fa-solid fa-sun text-amber-400";
+            } else {
+                document.body.classList.remove('dark');
+                icon.className = "fa-solid fa-moon text-indigo-750";
+            }
+        }
+
+        function toggleTheme() {
+            playSound('tick');
+            const icon = document.getElementById('theme-icon');
+            if (document.body.classList.contains('dark')) {
+                document.body.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                icon.className = "fa-solid fa-moon text-indigo-750";
+                showToast("Light mode enabled! ☀️");
+            } else {
+                document.body.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                icon.className = "fa-solid fa-sun text-amber-400";
+                showToast("Dark mode enabled! 🌙");
+            }
+        }
+
+        // States configuration (Everything starts as empty/clear arrays)
+        let activeTab = 'current';
+        let selectedPaymentItem = null;
+        let pinInputBuffer = '';
+
+        const curM = new Date().toISOString().slice(0, 7);
+
+        let salaryList = JSON.parse(localStorage.getItem('calc_salaries')) || [];
+        let dharList = JSON.parse(localStorage.getItem('calc_dhar_pro')) || [];
+        let khorchaList = JSON.parse(localStorage.getItem('calc_khorcha_pro')) || [];
+
+        function showToast(message) {
+            const toastEl = document.getElementById('toast');
+            const toastText = document.getElementById('toast-text');
+            toastText.textContent = message;
+            toastEl.classList.remove('hidden');
+            setTimeout(() => {
+                toastEl.classList.add('hidden');
+            }, 3000);
+        }
+
+        window.onload = function() {
+            initTheme();
+            initSecurityLockOnStartup();
+            recomputeAndRender();
+        };
+
+        // PIN Startup authentication checker
+        function initSecurityLockOnStartup() {
+            const isLockEnabled = localStorage.getItem('pigi_lock_enabled') === 'true';
+            const savedPin = localStorage.getItem('pigi_pin');
+
+            if (isLockEnabled && savedPin) {
+                // Hide main workspace and reveal lock screen overlay
+                document.getElementById('main-app').style.display = 'none';
+                document.getElementById('lock-screen').style.display = 'flex';
+                clearPinInput();
+            } else {
+                checkAndTriggerSalaryPrompt();
+            }
+        }
+
+        // Prompt salary modal dynamically once per month
+        function checkAndTriggerSalaryPrompt() {
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            const salary = salaryList.find(s => s.month === currentMonthKey);
+            const isDismissed = localStorage.getItem('pigi_salary_prompt_dismissed_' + currentMonthKey) === 'true';
+
+            if ((!salary || salary.amount === 0) && !isDismissed) {
+                openSalaryModal();
+            }
+        }
+
+        // Secure PIN Keyboard Handlers
+        function pressPinKey(num) {
+            if (pinInputBuffer.length >= 4) return;
+            pinInputBuffer += num;
+            playSound('tick');
+            updatePinDots();
+
+            if (pinInputBuffer.length === 4) {
+                setTimeout(verifyPinAndUnlock, 250);
+            }
+        }
+
+        function updatePinDots() {
+            for (let i = 1; i <= 4; i++) {
+                const dot = document.getElementById(`pin-dot-${i}`);
+                if (pinInputBuffer.length >= i) {
+                    dot.className = "w-4 h-4 rounded-full bg-emerald-450 border border-emerald-300 scale-110 shadow-[0_0_8px_#34d399]";
+                } else {
+                    dot.className = "w-4 h-4 rounded-full bg-slate-800 border border-slate-700 transition-all";
+                }
+            }
+        }
+
+        function clearPinInput() {
+            pinInputBuffer = '';
+            updatePinDots();
+        }
+
+        function deletePinLastChar() {
+            if (pinInputBuffer.length > 0) {
+                pinInputBuffer = pinInputBuffer.slice(0, -1);
+                playSound('tick');
+                updatePinDots();
+            }
+        }
+
+        function verifyPinAndUnlock() {
+            const savedPin = localStorage.getItem('pigi_pin');
+            if (pinInputBuffer === savedPin) {
+                playSound('success');
+                showToast("Application unlocked! 🔓");
+                document.getElementById('lock-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'block';
+                checkAndTriggerSalaryPrompt();
+            } else {
+                playSound('error');
+                document.getElementById('lock-feedback-text').textContent = "Incorrect PIN! Try again";
+                document.getElementById('lock-feedback').classList.add('border-rose-500', 'text-rose-500');
+                setTimeout(() => {
+                    document.getElementById('lock-feedback-text').textContent = "Enter 4-Digit Secure PIN";
+                    document.getElementById('lock-feedback').classList.remove('border-rose-500', 'text-rose-500');
+                }, 1500);
+                clearPinInput();
+            }
+        }
+
+        // Financial Calculation Logic Sheets
+        function recomputeAndRender() {
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            document.getElementById('current-month-display').textContent = currentMonthKey;
+
+            const salaryObj = salaryList.find(s => s.month === currentMonthKey) || { amount: 0 };
+            const salaryAmount = salaryObj.amount;
+
+            document.getElementById('current-salary-display').textContent = `₹ ${salaryAmount.toLocaleString()}`;
+            document.getElementById('ledger-salary').textContent = `₹ ${salaryAmount.toLocaleString()}`;
+
+            const activeDhars = dharList.filter(d => d.date.startsWith(currentMonthKey));
+            const dharMinus = activeDhars.filter(d => !d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+            const dharPlus = activeDhars.filter(d => d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+
+            document.getElementById('ledger-dhar-minus').textContent = `- ₹ ${dharMinus.toLocaleString()}`;
+            document.getElementById('ledger-dhar-plus').textContent = `+ ₹ ${dharPlus.toLocaleString()}`;
+
+            const activeKhorchas = khorchaList.filter(k => k.date.startsWith(currentMonthKey));
+            const khorchaTotal = activeKhorchas.reduce((sum, k) => sum + k.amount, 0);
+            document.getElementById('ledger-khorcha').textContent = `- ₹ ${khorchaTotal.toLocaleString()}`;
+
+            const netBalance = salaryAmount + dharPlus - khorchaTotal - dharMinus;
+            const netBalanceEl = document.getElementById('ledger-net-balance');
+            netBalanceEl.textContent = `₹ ${netBalance.toLocaleString()}`;
+            if (netBalance >= 0) {
+                netBalanceEl.className = "text-3xl sm:text-4xl font-black text-emerald-700 dark:text-emerald-400";
+            } else {
+                netBalanceEl.className = "text-3xl sm:text-4xl font-black text-rose-700 dark:text-rose-455";
+            }
+
+            const cashFlow = salaryAmount * 0.4;
+            const onlineFlow = salaryAmount * 0.6;
+            document.getElementById('cash-flow-display').textContent = `₹ ${cashFlow.toLocaleString()}`;
+            document.getElementById('online-flow-display').textContent = `₹ ${onlineFlow.toLocaleString()}`;
+
+            localStorage.setItem('calc_salaries', JSON.stringify(salaryList));
+            localStorage.setItem('calc_dhar_pro', JSON.stringify(dharList));
+            localStorage.setItem('calc_khorcha_pro', JSON.stringify(khorchaList));
+
+            renderActiveTables(currentMonthKey);
+            filterHistory();
+        }
+
+        function renderActiveTables(monthKey) {
+            const activeDhars = dharList.filter(d => d.date.startsWith(monthKey));
+            const dharBody = document.getElementById('dhar-table-body');
+            dharBody.innerHTML = '';
+            
+            if (activeDhars.length === 0) {
+                document.getElementById('dhar-empty-state').classList.remove('hidden');
+            } else {
+                document.getElementById('dhar-empty-state').classList.add('hidden');
+                activeDhars.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.className = `border-b border-amber-300 dark:border-amber-950 hover:bg-amber-100/50 dark:hover:bg-amber-955/40 transition ${item.isCompleted ? 'opacity-85 bg-emerald-500/10' : ''}`;
+                    
+                    const clearBtnContent = item.isCompleted ? '<i class="fa-solid fa-check text-emerald-800 dark:text-emerald-300 text-sm"></i>' : (item.method === 'cash' ? 'C' : 'Pay');
+                    const clearBtnClass = item.isCompleted ? 'bg-emerald-500/20 text-emerald-800 border border-emerald-500/40' : 'bg-white dark:bg-slate-900 themed-text-main border border-amber-300 dark:border-amber-955 hover:opacity-85 font-black';
+
+                    row.innerHTML = `
+                        <td class="py-4 px-1.5">
+                            <button onclick="handleDharClear('${item.id}')" class="w-10 h-7 rounded-lg flex items-center justify-center text-xs sm:text-sm ${clearBtnClass}">
+                                ${clearBtnContent}
+                            </button>
+                        </td>
+                        <td class="py-4 px-1.5">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-extrabold text-sm sm:text-base ${item.isCompleted ? 'line-through text-amber-900/90 dark:text-slate-300' : 'text-amber-955 dark:text-amber-50'}">
+                                    ${index + 1}. ${item.note}
+                                </span>
+                                ${item.isCompleted ? `<span class="text-[10px] bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950 px-2.5 py-0.5 rounded-full font-black uppercase">Done ${item.upiApp ? `(${item.upiApp})` : ''}</span>` : ''}
+                            </div>
+                        </td>
+                        <td class="py-4 px-1.5">
+                            <span class="text-xs sm:text-sm font-black uppercase ${item.method === 'cash' ? 'text-amber-700 dark:text-amber-405' : 'text-indigo-600 dark:text-indigo-400'}">${item.method}</span>
+                        </td>
+                        <td class="py-4 px-1.5 text-right">
+                            <span class="font-black font-mono text-sm sm:text-base px-2 py-0.5 rounded ${item.isPlus ? 'text-indigo-855 dark:text-indigo-300 bg-indigo-500/20' : 'text-amber-900 dark:text-amber-300 bg-amber-500/20'}">
+                                ${item.isPlus ? '+' : '-'} ₹${item.amount}
+                            </span>
+                        </td>
+                        <td class="py-4 px-1.5 text-center">
+                            <button onclick="deleteDharEntry('${item.id}')" class="text-amber-950 dark:text-slate-200 hover:text-rose-600 transition p-1.5 text-base font-black">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    `;
+                    dharBody.appendChild(row);
+                });
+            }
+
+            const activeKhorchas = khorchaList.filter(k => k.date.startsWith(monthKey));
+            const khorchaBody = document.getElementById('khorcha-table-body');
+            khorchaBody.innerHTML = '';
+
+            if (activeKhorchas.length === 0) {
+                document.getElementById('khorcha-empty-state').classList.remove('hidden');
+            } else {
+                document.getElementById('khorcha-empty-state').classList.add('hidden');
+                activeKhorchas.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    row.className = `border-b border-rose-300 dark:border-rose-955 hover:bg-rose-100/50 dark:hover:bg-rose-955/40 transition ${item.isCompleted ? 'opacity-85 bg-emerald-500/10' : ''}`;
+                    
+                    const clearBtnContent = item.isCompleted ? '<i class="fa-solid fa-check text-emerald-800 dark:text-emerald-300 text-sm"></i>' : (item.method === 'cash' ? 'C' : 'Pay');
+                    const clearBtnClass = item.isCompleted ? 'bg-emerald-500/20 text-emerald-800 border border-emerald-500/40' : 'bg-white dark:bg-slate-900 themed-text-main border border-rose-300 dark:border-rose-955 hover:opacity-85 font-black';
+
+                    row.innerHTML = `
+                        <td class="py-4 px-1.5">
+                            <button onclick="handleKhorchaClear('${item.id}')" class="w-10 h-7 rounded-lg flex items-center justify-center text-xs sm:text-sm ${clearBtnClass}">
+                                ${clearBtnContent}
+                            </button>
+                        </td>
+                        <td class="py-4 px-1.5">
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <span class="font-extrabold text-sm sm:text-base ${item.isCompleted ? 'line-through text-rose-900/90 dark:text-slate-300' : 'text-rose-955 dark:text-rose-50'}">
+                                    ${index + 1}. ${item.note}
+                                </span>
+                                ${item.isCompleted ? `<span class="text-[10px] bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950 px-2.5 py-0.5 rounded-full font-black uppercase font-sans">Done ${item.upiApp ? `(${item.upiApp})` : ''}</span>` : ''}
+                            </div>
+                        </td>
+                        <td class="py-4 px-1.5">
+                            <span class="text-xs sm:text-sm font-black uppercase ${item.method === 'cash' ? 'text-amber-900 dark:text-amber-400' : 'text-indigo-800 dark:text-indigo-400'}">${item.method}</span>
+                        </td>
+                        <td class="py-4 px-1.5 text-right text-rose-700 dark:text-rose-400 font-black font-mono text-sm sm:text-base">
+                            ₹${item.amount}
+                        </td>
+                        <td class="py-4 px-1.5 text-center">
+                            <button onclick="deleteKhorchaEntry('${item.id}')" class="text-rose-955 dark:text-slate-200 hover:text-rose-600 transition p-1.5 text-base font-black">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </td>
+                    `;
+                    khorchaBody.appendChild(row);
+                });
+            }
+        }
+
+        function addDharEntry(e) {
+            e.preventDefault();
+            const note = document.getElementById('dhar-note').value;
+            const amount = parseFloat(document.getElementById('dhar-amount').value);
+            const type = document.getElementById('dhar-type').value;
+            const method = document.getElementById('dhar-method').value;
+
+            if (!note || isNaN(amount)) return;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const newItem = {
+                id: 'dhar_' + Date.now(),
+                note: note,
+                amount: amount,
+                isPlus: type === 'plus',
+                isCompleted: false,
+                date: today,
+                method: method
+            };
+
+            dharList.unshift(newItem);
+            document.getElementById('dhar-form').reset();
+            showToast("New Adjustment Entry added successfully!");
+            recomputeAndRender();
+        }
+
+        function addKhorchaEntry(e) {
+            e.preventDefault();
+            const note = document.getElementById('khorcha-note').value;
+            const amount = parseFloat(document.getElementById('khorcha-amount').value);
+            const method = document.getElementById('khorcha-method').value;
+
+            if (!note || isNaN(amount)) return;
+
+            const today = new Date().toISOString().slice(0, 10);
+            const newItem = {
+                id: 'khorcha_' + Date.now(),
+                note: note,
+                amount: amount,
+                isCompleted: false,
+                date: today,
+                method: method
+            };
+
+            khorchaList.unshift(newItem);
+            document.getElementById('khorcha-form').reset();
+            showToast("New Expense logged successfully!");
+            recomputeAndRender();
+        }
+
+        function handleDharClear(id) {
+            const item = dharList.find(d => d.id === id);
+            if (!item) return;
+
+            if (item.isCompleted) {
+                item.isCompleted = false;
+                item.upiApp = undefined;
+                showToast("Cleared status removed.");
+                recomputeAndRender();
+            } else {
+                if (item.method === 'cash') {
+                    item.isCompleted = true;
+                    showToast("Cash Debt cleared!");
+                    recomputeAndRender();
+                } else {
+                    triggerOnlinePayment(item, 'dhar');
+                }
+            }
+        }
+
+        function handleKhorchaClear(id) {
+            const item = khorchaList.find(k => k.id === id);
+            if (!item) return;
+
+            if (item.isCompleted) {
+                item.isCompleted = false;
+                item.upiApp = undefined;
+                showToast("Cleared status removed.");
+                recomputeAndRender();
+            } else {
+                if (item.method === 'cash') {
+                    item.isCompleted = true;
+                    showToast("Cash Expense settled!");
+                    recomputeAndRender();
+                } else {
+                    triggerOnlinePayment(item, 'khorcha');
+                }
+            }
+        }
+
+        function deleteDharEntry(id) {
+            dharList = dharList.filter(d => d.id !== id);
+            showToast("Entry removed successfully.");
+            recomputeAndRender();
+        }
+
+        function deleteKhorchaEntry(id) {
+            khorchaList = khorchaList.filter(k => k.id !== id);
+            showToast("Entry removed successfully.");
+            recomputeAndRender();
+        }
+
+        function triggerOnlinePayment(item, type) {
+            selectedPaymentItem = { ...item, type: type };
+            document.getElementById('pay-amount-label').textContent = `₹ ${item.amount}`;
+            document.getElementById('pay-note-label').textContent = item.note;
+
+            document.getElementById('pay-screen-select').classList.remove('hidden');
+            document.getElementById('pay-screen-processing').classList.add('hidden');
+            document.getElementById('pay-screen-success').classList.add('hidden');
+
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+
+        function processAppPayment(appName) {
+            document.getElementById('pay-screen-select').classList.add('hidden');
+            document.getElementById('pay-screen-processing').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('pay-screen-processing').classList.add('hidden');
+                document.getElementById('pay-screen-success').classList.remove('hidden');
+                document.getElementById('pay-success-description').textContent = `₹ ${selectedPaymentItem.amount} successfully settled via simulated ${appName} gateway connection.`;
+
+                setTimeout(() => {
+                    if (selectedPaymentItem.type === 'dhar') {
+                        const target = dharList.find(d => d.id === selectedPaymentItem.id);
+                        if (target) {
+                            target.isCompleted = true;
+                            target.upiApp = appName;
+                        }
+                    } else {
+                        const target = khorchaList.find(k => k.id === selectedPaymentItem.id);
+                        if (target) {
+                            target.isCompleted = true;
+                            target.upiApp = appName;
+                        }
+                    }
+                    closePaymentModal();
+                    recomputeAndRender();
+                    showToast(`Successfully settled via ${appName}!`);
+                }, 1200);
+            }, 1200);
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+            selectedPaymentItem = null;
+        }
+
+        // Modal triggers
+        function openSalaryModal() {
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            const sal = salaryList.find(s => s.month === currentMonthKey) || { amount: 0 };
+            document.getElementById('salary-input').value = sal.amount > 0 ? sal.amount : "";
+            document.getElementById('salary-modal').classList.remove('hidden');
+        }
+
+        function closeSalaryModal() {
+            document.getElementById('salary-modal').classList.add('hidden');
+        }
+
+        function dismissSalaryModal() {
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            // Block startup prompts for the rest of this month
+            localStorage.setItem('pigi_salary_prompt_dismissed_' + currentMonthKey, 'true');
+            closeSalaryModal();
+            showToast("Prompt dismissed. Configurable via 'Edit Salary' button.");
+        }
+
+        function saveMonthlySalary(e) {
+            e.preventDefault();
+            const amt = parseFloat(document.getElementById('salary-input').value);
+            if (isNaN(amt) || amt < 0) return;
+
+            const currentMonthKey = new Date().toISOString().slice(0, 7);
+            salaryList = salaryList.filter(s => s.month !== currentMonthKey);
+            salaryList.push({
+                month: currentMonthKey,
+                amount: amt,
+                timestamp: Date.now()
+            });
+
+            // Persist configuration choice for prompt blocker
+            localStorage.setItem('pigi_salary_prompt_dismissed_' + currentMonthKey, 'true');
+
+            closeSalaryModal();
+            showToast(`Salary for current month updated to: ₹${amt}`);
+            recomputeAndRender();
+        }
+
+        // SECURITY / PIN CONFIGURATIONS
+        function openSecuritySettingsModal() {
+            const isLockEnabled = localStorage.getItem('pigi_lock_enabled') === 'true';
+            document.getElementById('lock-toggle').checked = isLockEnabled;
+
+            const hasPin = !!localStorage.getItem('pigi_pin');
+            const lockNowBtn = document.getElementById('lock-now-btn');
+            if (hasPin && isLockEnabled) {
+                lockNowBtn.classList.remove('hidden');
+            } else {
+                lockNowBtn.classList.add('hidden');
+            }
+
+            hideSetPinSection();
+            document.getElementById('security-settings-modal').classList.remove('hidden');
+        }
+
+        function closeSecuritySettingsModal() {
+            document.getElementById('security-settings-modal').classList.add('hidden');
+        }
+
+        function showSetPinSection() {
+            document.getElementById('security-main-options').classList.add('hidden');
+            document.getElementById('security-pin-form-container').classList.remove('hidden');
+            document.getElementById('new-pin-input').value = '';
+        }
+
+        function hideSetPinSection() {
+            document.getElementById('security-main-options').classList.remove('hidden');
+            document.getElementById('security-pin-form-container').classList.add('hidden');
+        }
+
+        function saveNewPin() {
+            const pinVal = document.getElementById('new-pin-input').value;
+            if (pinVal.length !== 4 || isNaN(pinVal)) {
+                playSound('error');
+                showToast("Error: PIN must be exactly 4 digits!");
+                return;
+            }
+
+            localStorage.setItem('pigi_pin', pinVal);
+            playSound('success');
+            showToast("Secure PIN updated successfully! 🔒");
+            hideSetPinSection();
+
+            // Auto toggle lock enabled on setting a valid PIN for the first time
+            if (localStorage.getItem('pigi_lock_enabled') !== 'false') {
+                localStorage.setItem('pigi_lock_enabled', 'true');
+                document.getElementById('lock-toggle').checked = true;
+            }
+            openSecuritySettingsModal(); // Refresh modal layouts
+        }
+
+        function toggleLockFeature() {
+            const toggleVal = document.getElementById('lock-toggle').checked;
+            const savedPin = localStorage.getItem('pigi_pin');
+
+            if (toggleVal && !savedPin) {
+                playSound('error');
+                showToast("Please configure a 4-Digit PIN first!");
+                document.getElementById('lock-toggle').checked = false;
+                showSetPinSection();
+                return;
+            }
+
+            localStorage.setItem('pigi_lock_enabled', toggleVal ? 'true' : 'false');
+            playSound('tick');
+            showToast(toggleVal ? "Startup lock system activated!" : "Lock system disabled.");
+            openSecuritySettingsModal(); // Refresh modal view elements
+        }
+
+        function lockAppImmediately() {
+            closeSecuritySettingsModal();
+            document.getElementById('main-app').style.display = 'none';
+            document.getElementById('lock-screen').style.display = 'flex';
+            clearPinInput();
+            showToast("Application Locked!");
+        }
+
+        function switchTab(tab) {
+            activeTab = tab;
+            if (tab === 'current') {
+                document.getElementById('tab-current').className = "px-5 py-3 rounded-xl text-sm font-bold tracking-wide transition themed-btn-primary shadow-lg shadow-indigo-500/10 hover:opacity-90";
+                document.getElementById('tab-history').className = "px-5 py-3 rounded-xl text-sm font-bold tracking-wide transition themed-bg-inner themed-text-main themed-border border hover:opacity-90";
+                
+                document.getElementById('content-current').classList.remove('hidden');
+                document.getElementById('content-history').classList.add('hidden');
+            } else {
+                document.getElementById('tab-current').className = "px-5 py-3 rounded-xl text-sm font-bold tracking-wide transition themed-bg-inner themed-text-main themed-border border hover:opacity-90";
+                document.getElementById('tab-history').className = "px-5 py-3 rounded-xl text-sm font-bold tracking-wide transition themed-btn-primary shadow-lg shadow-indigo-500/10 hover:opacity-90";
+                
+                document.getElementById('content-current').classList.add('hidden');
+                document.getElementById('content-history').classList.remove('hidden');
+                filterHistory();
+            }
+        }
+
+        function filterHistory() {
+            const start = document.getElementById('history-start-date').value;
+            const end = document.getElementById('history-end-date').value;
+
+            let filteredDhar = [...dharList];
+            let filteredKhorcha = [...khorchaList];
+
+            if (start) {
+                filteredDhar = filteredDhar.filter(d => d.date >= start);
+                filteredKhorcha = filteredKhorcha.filter(k => k.date >= start);
+            }
+            if (end) {
+                filteredDhar = filteredDhar.filter(d => d.date <= end);
+                filteredKhorcha = filteredKhorcha.filter(k => k.date <= end);
+            }
+
+            const historyMinus = filteredDhar.filter(d => !d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+            const historyPlus = filteredDhar.filter(d => d.isPlus).reduce((sum, d) => sum + d.amount, 0);
+            const historyKhorcha = filteredKhorcha.reduce((sum, k) => sum + k.amount, 0);
+
+            document.getElementById('history-calc-minus').textContent = `₹ ${historyMinus.toLocaleString()}`;
+            document.getElementById('history-calc-plus').textContent = `₹ ${historyPlus.toLocaleString()}`;
+            document.getElementById('history-calc-khorcha').textContent = `₹ ${historyKhorcha.toLocaleString()}`;
+
+            const dharListEl = document.getElementById('history-dhar-list');
+            dharListEl.innerHTML = '';
+            if (filteredDhar.length === 0) {
+                dharListEl.innerHTML = '<p class="text-sm text-violet-955 dark:text-slate-350 italic font-black p-2">No records found matching criteria.</p>';
+            } else {
+                filteredDhar.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-violet-300 dark:border-violet-950 flex items-center justify-between text-sm sm:text-base';
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-extrabold text-slate-900 dark:text-slate-100">${item.note}</p>
+                            <p class="text-xs text-violet-750 dark:text-violet-300 mt-1 font-black">${item.date} • ${item.method.toUpperCase()}</p>
+                        </div>
+                        <span class="font-mono font-black ${item.isPlus ? 'text-indigo-655 dark:text-indigo-400' : 'text-amber-600'}">
+                            ${item.isPlus ? '+' : '-'} ₹${item.amount}
+                        </span>
+                    `;
+                    dharListEl.appendChild(el);
+                });
+            }
+
+            const khorchaListEl = document.getElementById('history-khorcha-list');
+            khorchaListEl.innerHTML = '';
+            if (filteredKhorcha.length === 0) {
+                khorchaListEl.innerHTML = '<p class="text-sm text-violet-955 dark:text-slate-350 italic font-black p-2">No records found matching criteria.</p>';
+            } else {
+                filteredKhorcha.forEach(item => {
+                    const el = document.createElement('div');
+                    el.className = 'bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-violet-300 dark:border-violet-950 flex items-center justify-between text-sm sm:text-base';
+                    el.innerHTML = `
+                        <div>
+                            <p class="font-extrabold text-slate-900 dark:text-slate-100">${item.note}</p>
+                            <p class="text-xs text-violet-750 dark:text-violet-300 mt-1 font-black">${item.date} • ${item.method.toUpperCase()}</p>
+                        </div>
+                        <span class="font-mono font-black text-rose-700 dark:text-rose-450 font-bold">
+                            - ₹${item.amount}
+                        </span>
+                    `;
+                    khorchaListEl.appendChild(el);
+                });
+            }
+        }
+
+        function clearHistoryFilters() {
+            document.getElementById('history-start-date').value = '';
+            document.getElementById('history-end-date').value = '';
+            filterHistory();
+            showToast("Search filters cleared.");
+        }
+
+        function resetDataToTemplate() {
+            if (window.confirm("Are you sure you want to clear your records completely and start fresh?")) {
+                salaryList = [];
+                dharList = [];
+                khorchaList = [];
+                localStorage.removeItem('calc_salaries');
+                localStorage.removeItem('calc_dhar_pro');
+                localStorage.removeItem('calc_khorcha_pro');
+                
+                // Clear monthly configuration state blocks
+                const currentMonthKey = new Date().toISOString().slice(0, 7);
+                localStorage.removeItem('pigi_salary_prompt_dismissed_' + currentMonthKey);
+
+                showToast("All data cleared successfully!");
+                recomputeAndRender();
+                openSalaryModal();
+            }
+        }
+    </script>
+</body>
+</html>
+
+```
