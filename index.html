@@ -54,7 +54,7 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        /* Clean PigiBank Logo */
+        /* Clean PigiBank Logo in Fredoka Bubble Font with #fa6b9c */
         .pigibank-logo-container {
             font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
             font-weight: 700;
@@ -62,11 +62,7 @@
             margin-top: 4px;
             display: inline-block;
         }
-        .pigi-text {
-            color: #fa6b9c;
-            opacity: 1 !important;
-        }
-        .bank-text {
+        .pigi-bank-text {
             color: #fa6b9c;
             opacity: 1 !important;
         }
@@ -90,7 +86,7 @@
                 <i class="fa-solid fa-piggy-bank text-indigo-400 text-3xl animate-pulse"></i>
             </div>
             <div class="pigibank-logo-container text-4xl block mx-auto">
-                <span class="pigi-text">Pigi</span><span class="bank-text">Bank</span>
+                <span class="pigi-bank-text">PigiBank</span>
             </div>
             <p class="text-slate-400 text-xs mt-2 font-bold">Application locked via secure client PIN</p>
         </div>
@@ -166,7 +162,7 @@
                     <div>
                         <div class="flex items-center gap-2.5">
                             <div class="pigibank-logo-container text-3xl">
-                                <span class="pigi-text">Pigi</span><span class="bank-text">Bank</span>
+                                <span class="pigi-bank-text">PigiBank</span>
                             </div>
                             <span class="text-xs bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-full border border-indigo-500/20 font-bold uppercase tracking-wider">
                                 Active
@@ -219,9 +215,9 @@
                           </button>
                         </div>
                         <div class="mb-4">
-                          <p class="text-4xl sm:text-5xl font-black tracking-tight text-emerald-950 dark:text-emerald-50" id="current-salary-display">₹ 0</p>
+                          <p class="text-4xl sm:text-5xl font-black tracking-tight text-emerald-955 dark:text-emerald-50" id="current-salary-display">₹ 0</p>
                           <p class="text-xs sm:text-sm text-emerald-900 dark:text-emerald-300 mt-1.5 font-bold">
-                            Month: <span class="text-emerald-950 dark:text-emerald-300 font-black uppercase" id="current-month-display">YYYY-MM</span>
+                            Month: <span class="text-emerald-955 dark:text-emerald-300 font-black uppercase" id="current-month-display">YYYY-MM</span>
                           </p>
                         </div>
                         <div class="mt-5 pt-5 border-t border-emerald-300 dark:border-emerald-900 grid grid-cols-2 gap-3 text-center">
@@ -577,7 +573,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-black uppercase themed-text-muted mb-1.5">Payment Method</label>
-                        <select id="edit-method" class="w-full bg-slate-50 dark:bg-slate-955 themed-border border rounded-xl px-3 py-3 text-sm themed-text-main font-bold cursor-pointer focus:outline-none">
+                        <select id="edit-method" onchange="toggleEditSplitInputs()" class="w-full bg-slate-50 dark:bg-slate-955 themed-border border rounded-xl px-3 py-3 text-sm themed-text-main font-bold cursor-pointer focus:outline-none">
                             <option value="cash">Cash</option>
                             <option value="online">UPI</option>
                             <option value="split">Split</option>
@@ -589,6 +585,17 @@
                             <option value="minus">Debt (Minus)</option>
                             <option value="plus">Deposit (Plus)</option>
                         </select>
+                    </div>
+                </div>
+
+                <div id="edit-split-fields" class="grid grid-cols-2 gap-3 hidden bg-slate-100 dark:bg-slate-900 p-3 rounded-xl border themed-border">
+                    <div>
+                        <label class="block text-[11px] font-black uppercase themed-text-muted mb-1">Cash Portion (₹)</label>
+                        <input id="edit-cash-amount" type="number" step="any" placeholder="Cash Amount" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold font-mono text-slate-800 dark:text-white">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black uppercase themed-text-muted mb-1">UPI Portion (₹)</label>
+                        <input id="edit-online-amount" type="number" step="any" placeholder="UPI Amount" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold font-mono text-slate-800 dark:text-white">
                     </div>
                 </div>
 
@@ -823,11 +830,11 @@
                 <div id="settle-split-fields" class="grid grid-cols-2 gap-3 hidden bg-slate-100 dark:bg-slate-900 p-3 rounded-xl border themed-border">
                     <div>
                         <label class="block text-[11px] font-black uppercase themed-text-muted mb-1">Cash Portion (₹)</label>
-                        <input id="settle-cash-amount" type="number" step="any" placeholder="Cash" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold font-mono themed-text-main">
+                        <input id="settle-cash-amount" type="number" step="any" placeholder="Cash" value="0" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold font-mono text-slate-800 dark:text-white">
                     </div>
                     <div>
                         <label class="block text-[11px] font-black uppercase themed-text-muted mb-1">UPI Portion (₹)</label>
-                        <input id="settle-online-amount" type="number" step="any" placeholder="UPI" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold font-mono themed-text-main">
+                        <input id="settle-online-amount" type="number" step="any" placeholder="UPI" value="0" class="w-full bg-slate-50 dark:bg-slate-950 border border-slate-300 rounded-lg px-2.5 py-2 text-xs font-bold font-mono text-slate-800 dark:text-white">
                     </div>
                 </div>
 
@@ -880,6 +887,22 @@
         let dharList = JSON.parse(localStorage.getItem('calc_dhar_pro')) || [];
         let khorchaList = JSON.parse(localStorage.getItem('calc_khorcha_pro')) || [];
 
+        // Migrate older databases dynamically to handle installments
+        dharList.forEach(d => {
+            if (d.paidAmount === undefined) {
+                d.paidAmount = d.isCompleted ? d.amount : 0;
+                d.dueAmount = d.isCompleted ? 0 : d.amount;
+                d.payments = d.isCompleted ? [{ id: 'p_' + Date.now(), amount: d.amount, method: d.method, cashAmount: d.cashAmount || 0, onlineAmount: d.onlineAmount || 0, date: d.date, upiApp: d.upiApp || '' }] : [];
+            }
+        });
+        khorchaList.forEach(k => {
+            if (k.paidAmount === undefined) {
+                k.paidAmount = k.isCompleted ? k.amount : 0;
+                k.dueAmount = k.isCompleted ? 0 : k.amount;
+                k.payments = k.isCompleted ? [{ id: 'p_' + Date.now(), amount: k.amount, method: k.method, cashAmount: k.cashAmount || 0, onlineAmount: k.onlineAmount || 0, date: k.date, upiApp: k.upiApp || '' }] : [];
+            }
+        });
+
         // Hardcoded Recovery Key mapping your phone number
         const MASTER_RESET_KEY = "7001170262";
         localStorage.setItem('pigi_master_key', MASTER_RESET_KEY);
@@ -929,7 +952,6 @@
         }
 
         function toggleTheme() {
-            playSound('tick');
             const icon = document.getElementById('theme-icon');
             if (document.body.classList.contains('dark')) {
                 document.body.classList.remove('dark');
@@ -972,44 +994,10 @@
             }
         }
 
-        // Sound System
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        function playSound(type) {
-            try {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-
-                if (type === 'tick') {
-                    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.08);
-                } else if (type === 'success') {
-                    osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); 
-                    osc.frequency.exponentialRampToValueAtTime(1046.50, audioCtx.currentTime + 0.3); 
-                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.4);
-                } else if (type === 'error') {
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(120, audioCtx.currentTime);
-                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.35);
-                }
-            } catch(e) {}
-        }
-
         // Secure PIN Keyboard Handlers
         function pressPinKey(num) {
             if (pinInputBuffer.length >= 4) return;
             pinInputBuffer += num;
-            playSound('tick');
             updatePinDots();
 
             if (pinInputBuffer.length === 4) {
@@ -1036,7 +1024,6 @@
         function deletePinLastChar() {
             if (pinInputBuffer.length > 0) {
                 pinInputBuffer = pinInputBuffer.slice(0, -1);
-                playSound('tick');
                 updatePinDots();
             }
         }
@@ -1047,13 +1034,11 @@
             const mainApp = document.getElementById('main-app');
 
             if (pinInputBuffer === savedPin) {
-                playSound('success');
                 showToast("Application unlocked! 🔓");
                 hideScreen(lockScreen);
                 showScreen(mainApp, 'block');
                 checkAndTriggerSalaryPrompt();
             } else {
-                playSound('error');
                 document.getElementById('lock-feedback-text').textContent = "Incorrect PIN! Try again";
                 document.getElementById('lock-feedback').className = "bg-slate-900/90 px-5 py-2.5 rounded-full border border-rose-500 text-sm text-center flex items-center gap-2 font-bold text-rose-500 shadow-xl";
                 setTimeout(() => {
@@ -1105,14 +1090,12 @@
             const mainApp = document.getElementById('main-app');
 
             if ((savedAnswer && input === savedAnswer) || input === MASTER_RESET_KEY) {
-                playSound('success');
                 showToast("Verification Successful! PIN Settings unlocked.");
                 hideScreen(lockScreen);
                 showScreen(mainApp, 'block');
                 openSecuritySettingsModal();
                 showSetPinSection();
             } else {
-                playSound('error');
                 showToast("Incorrect Answer or Master Phone Key!");
             }
         }
@@ -1147,18 +1130,150 @@
             }
         }
 
-        function suggestEditSplit() {
-            const total = parseFloat(document.getElementById('edit-amount').value) || 0;
-            const method = document.getElementById('edit-method').value;
+        // Settle / Installment Modal toggle handlers
+        function openSettleModal(itemId, type) {
+            const item = type === 'dhar' ? dharList.find(d => d.id === itemId) : khorchaList.find(k => k.id === itemId);
+            if (!item) return;
+
+            document.getElementById('settle-item-id').value = itemId;
+            document.getElementById('settle-item-type').value = type;
+            document.getElementById('settle-item-title').textContent = item.note;
+            document.getElementById('settle-total-amt').textContent = `₹ ${item.amount.toLocaleString()}`;
+            document.getElementById('settle-paid-amt').textContent = `₹ ${(item.paidAmount || 0).toLocaleString()}`;
+            
+            const remainingDue = item.dueAmount !== undefined ? item.dueAmount : item.amount;
+            document.getElementById('settle-due-amt').textContent = `₹ ${remainingDue.toLocaleString()}`;
+
+            document.getElementById('settle-pay-amount').value = remainingDue;
+            document.getElementById('settle-method').value = item.method === 'split' ? 'split' : item.method;
+            
+            document.getElementById('settle-cash-amount').value = '0';
+            document.getElementById('settle-online-amount').value = '0';
+            
+            toggleSettleSplitInputs();
+            suggestSettleSplit();
+
+            document.getElementById('settle-item-modal').classList.remove('hidden');
+        }
+
+        function closeSettleModal() {
+            document.getElementById('settle-item-modal').classList.add('hidden');
+        }
+
+        function toggleSettleSplitInputs() {
+            const method = document.getElementById('settle-method').value;
+            const container = document.getElementById('settle-split-fields');
             if (method === 'split') {
-                const cash = Math.round(total * 0.4);
-                const online = total - cash;
-                document.getElementById('edit-cash-amount').value = cash > 0 ? cash : "";
-                document.getElementById('edit-online-amount').value = online > 0 ? online : "";
+                container.classList.remove('hidden');
+            } else {
+                container.classList.add('hidden');
             }
         }
 
-        // Financial Calculation Logic Sheets with true Flow values
+        function suggestSettleSplit() {
+            const total = parseFloat(document.getElementById('settle-pay-amount').value) || 0;
+            const method = document.getElementById('settle-method').value;
+            if (method === 'split') {
+                const cash = Math.round(total * 0.4);
+                const online = total - cash;
+                document.getElementById('settle-cash-amount').value = cash >= 0 ? cash : 0;
+                document.getElementById('settle-online-amount').value = online >= 0 ? online : 0;
+            }
+        }
+
+        function confirmPartialSettle(e) {
+            e.preventDefault();
+            const itemId = document.getElementById('settle-item-id').value;
+            const type = document.getElementById('settle-item-type').value;
+            const payAmount = parseFloat(document.getElementById('settle-pay-amount').value) || 0;
+            const method = document.getElementById('settle-method').value;
+
+            const item = type === 'dhar' ? dharList.find(d => d.id === itemId) : khorchaList.find(k => k.id === itemId);
+            if (!item) return;
+
+            const currentDue = item.dueAmount !== undefined ? item.dueAmount : item.amount;
+
+            if (payAmount <= 0) {
+                showToast("Error: Payment must be greater than zero!");
+                return;
+            }
+
+            if (payAmount > currentDue + 0.01) {
+                showToast(`Error: Cannot exceed remaining due (₹${currentDue})!`);
+                return;
+            }
+
+            let cashAmt = 0;
+            let onlineAmt = 0;
+
+            if (method === 'split') {
+                cashAmt = parseFloat(document.getElementById('settle-cash-amount').value) || 0;
+                onlineAmt = parseFloat(document.getElementById('settle-online-amount').value) || 0;
+                if (Math.abs((cashAmt + onlineAmt) - payAmount) > 0.01) {
+                    showToast("Error: Cash + UPI portion must equal payment amount!");
+                    return;
+                }
+            } else if (method === 'cash') {
+                cashAmt = payAmount;
+            } else if (method === 'online') {
+                onlineAmt = payAmount;
+            }
+
+            if (!item.payments) {
+                item.payments = [];
+                item.paidAmount = 0;
+                item.dueAmount = item.amount;
+            }
+
+            const paymentRecord = {
+                id: 'p_' + Date.now(),
+                amount: payAmount,
+                method: method,
+                cashAmount: cashAmt,
+                onlineAmount: onlineAmt,
+                date: getLocalDateString(),
+                upiApp: ''
+            };
+
+            if (method === 'online' || (method === 'split' && onlineAmt > 0)) {
+                selectedPaymentItem = {
+                    id: itemId,
+                    type: type,
+                    amount: payAmount,
+                    method: method,
+                    cashAmount: cashAmt,
+                    onlineAmount: onlineAmt,
+                    paymentRecord: paymentRecord
+                };
+                closeSettleModal();
+                triggerOnlinePaymentInstallment(onlineAmt > 0 ? onlineAmt : payAmount, item.note);
+            } else {
+                item.payments.push(paymentRecord);
+                item.paidAmount += payAmount;
+                item.dueAmount = item.amount - item.paidAmount;
+                if (item.dueAmount <= 0.01) {
+                    item.isCompleted = true;
+                    item.dueAmount = 0;
+                }
+                closeSettleModal();
+                showToast("Installment payment logged successfully!");
+                recomputeAndRender();
+            }
+        }
+
+        function triggerOnlinePaymentInstallment(amount, note) {
+            const upiId = localStorage.getItem('pigi_receiver_upi') || '7001170262@upi';
+            document.getElementById('pay-amount-label').textContent = `₹ ${amount}`;
+            document.getElementById('pay-note-label').textContent = note;
+
+            document.getElementById('pay-screen-select').classList.remove('hidden');
+            document.getElementById('pay-screen-processing').classList.add('hidden');
+            document.getElementById('pay-screen-success').classList.add('hidden');
+
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+
+        // Financial Calculation Logic Sheets
         function recomputeAndRender() {
             const currentMonthKey = getLocalMonthKey();
             document.getElementById('current-month-display').textContent = currentMonthKey;
@@ -1166,46 +1281,31 @@
             const salaryObj = salaryList.find(s => s.month === currentMonthKey) || { amount: 0, cash: 0, online: 0 };
             const salaryAmount = salaryObj.amount;
 
-            // Load saved receiver UPI if active
             const savedUpi = localStorage.getItem('pigi_receiver_upi') || '7001170262@upi';
             document.getElementById('settings-receiver-upi').value = savedUpi === '7001170262@upi' ? '' : savedUpi;
 
-            // Filter lists strictly aligned with local month timezone keys
             const activeDhars = dharList.filter(d => d.date.substring(0, 7) === currentMonthKey);
             const activeKhorchas = khorchaList.filter(k => k.date.substring(0, 7) === currentMonthKey);
 
-            // True Wallet/Bank physical cash tracker
             let finalCashFlow = salaryObj.cash || 0;
             let finalOnlineFlow = salaryObj.online || 0;
 
-            // Debts and Deposits adjust Net Balance IMMEDIATELY upon creation
             activeDhars.forEach(d => {
                 const amt = d.amount || 0;
                 const cAmt = d.cashAmount || 0;
                 const oAmt = d.onlineAmount || 0;
 
-                if (d.isPlus) { // Deposit (Adds to physical wallet)
-                    if (d.method === 'cash') {
-                        finalCashFlow += amt;
-                    } else if (d.method === 'online') {
-                        finalOnlineFlow += amt;
-                    } else if (d.method === 'split') {
-                        finalCashFlow += cAmt;
-                        finalOnlineFlow += oAmt;
-                    }
-                } else { // Debt (Deducts from physical wallet)
-                    if (d.method === 'cash') {
-                        finalCashFlow -= amt;
-                    } else if (d.method === 'online') {
-                        finalOnlineFlow -= amt;
-                    } else if (d.method === 'split') {
-                        finalCashFlow -= cAmt;
-                        finalOnlineFlow -= oAmt;
-                    }
+                if (d.isPlus) {
+                    if (d.method === 'cash') finalCashFlow += amt;
+                    else if (d.method === 'online') finalOnlineFlow += amt;
+                    else if (d.method === 'split') { finalCashFlow += cAmt; finalOnlineFlow += oAmt; }
+                } else {
+                    if (d.method === 'cash') finalCashFlow -= amt;
+                    else if (d.method === 'online') finalOnlineFlow -= amt;
+                    else if (d.method === 'split') { finalCashFlow -= cAmt; finalOnlineFlow -= oAmt; }
                 }
             });
 
-            // Expenses (Khorcha) ONLY deduct from cash/online wallet flows when installments are paid
             activeKhorchas.forEach(k => {
                 if (k.payments) {
                     k.payments.forEach(p => {
@@ -1213,30 +1313,22 @@
                         const cAmt = p.cashAmount || 0;
                         const oAmt = p.onlineAmount || 0;
 
-                        if (p.method === 'cash') {
-                            finalCashFlow -= amt;
-                        } else if (p.method === 'online') {
-                            finalOnlineFlow -= amt;
-                        } else if (p.method === 'split') {
-                            finalCashFlow -= cAmt;
-                            finalOnlineFlow -= oAmt;
-                        }
+                        if (p.method === 'cash') finalCashFlow -= amt;
+                        else if (p.method === 'online') finalOnlineFlow -= amt;
+                        else if (p.method === 'split') { finalCashFlow -= cAmt; finalOnlineFlow -= oAmt; }
                     });
                 }
             });
 
-            // Update Header display boards
             document.getElementById('current-salary-display').textContent = `₹ ${salaryAmount.toLocaleString()}`;
             document.getElementById('ledger-salary').textContent = `₹ ${salaryAmount.toLocaleString()}`;
             document.getElementById('cash-flow-display').textContent = `₹ ${finalCashFlow.toLocaleString()}`;
             document.getElementById('online-flow-display').textContent = `₹ ${finalOnlineFlow.toLocaleString()}`;
 
-            // Calculate overall ledger statistics
             const totalDharMinus = activeDhars.filter(d => !d.isPlus).reduce((sum, d) => sum + d.amount, 0);
             const totalDharPlus = activeDhars.filter(d => d.isPlus).reduce((sum, d) => sum + d.amount, 0);
             const totalKhorchaCompleted = activeKhorchas.reduce((sum, k) => sum + (k.paidAmount || 0), 0);
 
-            // Outstanding Unsettled planned expenses total
             const totalKhorchaPlanned = activeKhorchas.reduce((sum, k) => sum + (k.dueAmount !== undefined ? k.dueAmount : k.amount), 0);
             document.getElementById('khorcha-planned-total').textContent = `₹ ${totalKhorchaPlanned.toLocaleString()}`;
 
@@ -1244,7 +1336,6 @@
             document.getElementById('ledger-dhar-plus').textContent = `+ ₹ ${totalDharPlus.toLocaleString()}`;
             document.getElementById('ledger-khorcha').textContent = `- ₹ ${totalKhorchaCompleted.toLocaleString()}`;
 
-            // Calculate Net Balance representing physical wallet
             const netBalance = finalCashFlow + finalOnlineFlow;
             const netBalanceEl = document.getElementById('ledger-net-balance');
             netBalanceEl.textContent = `₹ ${netBalance.toLocaleString()}`;
@@ -1254,7 +1345,6 @@
                 netBalanceEl.className = "text-3xl sm:text-4xl font-black text-rose-700 dark:text-rose-455 font-mono";
             }
 
-            // Sync with local memory
             localStorage.setItem('calc_salaries', JSON.stringify(salaryList));
             localStorage.setItem('calc_dhar_pro', JSON.stringify(dharList));
             localStorage.setItem('calc_khorcha_pro', JSON.stringify(khorchaList));
@@ -1398,7 +1488,6 @@
                 cashPortion = parseFloat(document.getElementById('dhar-cash-amount').value) || 0;
                 onlinePortion = parseFloat(document.getElementById('dhar-online-amount').value) || 0;
                 if (Math.abs((cashPortion + onlinePortion) - amount) > 0.01) {
-                    playSound('error');
                     showToast("Error: Cash + UPI portion must equal total amount!");
                     return;
                 }
@@ -1446,7 +1535,6 @@
                 cashPortion = parseFloat(document.getElementById('khorcha-cash-amount').value) || 0;
                 onlinePortion = parseFloat(document.getElementById('khorcha-online-amount').value) || 0;
                 if (Math.abs((cashPortion + onlinePortion) - amount) > 0.01) {
-                    playSound('error');
                     showToast("Error: Cash + UPI portion must equal total amount!");
                     return;
                 }
@@ -1478,6 +1566,66 @@
             recomputeAndRender();
         }
 
+        // Edit Transaction record engine
+        function openEditModal(itemId, type) {
+            const editId = document.getElementById('edit-item-id');
+            const editType = document.getElementById('edit-item-type');
+            const editNote = document.getElementById('edit-note');
+            const editAmount = document.getElementById('edit-amount');
+            const editMethod = document.getElementById('edit-method');
+            const editTypeSelect = document.getElementById('edit-type');
+            const editTypeContainer = document.getElementById('edit-type-container');
+            const editDate = document.getElementById('edit-date');
+
+            const splitCash = document.getElementById('edit-cash-amount');
+            const splitOnline = document.getElementById('edit-online-amount');
+            const splitContainer = document.getElementById('edit-split-fields');
+
+            editId.value = itemId;
+            editType.value = type;
+
+            if (type === 'dhar') {
+                const item = dharList.find(d => d.id === itemId);
+                if (!item) return;
+                editNote.value = item.note;
+                editAmount.value = item.amount;
+                editMethod.value = item.method;
+                editTypeSelect.value = item.isPlus ? 'plus' : 'minus';
+                editDate.value = item.date;
+                editTypeContainer.classList.remove('hidden');
+
+                if (item.method === 'split') {
+                    splitContainer.classList.remove('hidden');
+                    splitCash.value = item.cashAmount || 0;
+                    splitOnline.value = item.onlineAmount || 0;
+                } else {
+                    splitContainer.classList.add('hidden');
+                }
+            } else {
+                const item = khorchaList.find(k => k.id === itemId);
+                if (!item) return;
+                editNote.value = item.note;
+                editAmount.value = item.amount;
+                editMethod.value = item.method;
+                editDate.value = item.date;
+                editTypeContainer.classList.add('hidden');
+
+                if (item.method === 'split') {
+                    splitContainer.classList.remove('hidden');
+                    splitCash.value = item.cashAmount || 0;
+                    splitOnline.value = item.onlineAmount || 0;
+                } else {
+                    splitContainer.classList.add('hidden');
+                }
+            }
+
+            document.getElementById('edit-item-modal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            document.getElementById('edit-item-modal').classList.add('hidden');
+        }
+
         function saveEditedItem(e) {
             e.preventDefault();
             const itemId = document.getElementById('edit-item-id').value;
@@ -1497,7 +1645,6 @@
                 cashPortion = parseFloat(document.getElementById('edit-cash-amount').value) || 0;
                 onlinePortion = parseFloat(document.getElementById('edit-online-amount').value) || 0;
                 if (Math.abs((cashPortion + onlinePortion) - amount) > 0.01) {
-                    playSound('error');
                     showToast("Error: Cash + UPI portion must equal total amount!");
                     return;
                 }
@@ -1512,7 +1659,6 @@
                 if (item) {
                     const paid = item.paidAmount || 0;
                     if (amount < paid) {
-                        playSound('error');
                         showToast(`Error: Total amount cannot be less than already paid amount (₹${paid})!`);
                         return;
                     }
@@ -1531,7 +1677,6 @@
                 if (item) {
                     const paid = item.paidAmount || 0;
                     if (amount < paid) {
-                        playSound('error');
                         showToast(`Error: Total amount cannot be less than already paid amount (₹${paid})!`);
                         return;
                     }
@@ -1563,7 +1708,7 @@
             recomputeAndRender();
         }
 
-        // Genuine UPI Intent Scheme Link Redirection (PhonePe / GPay)
+        // Genuine UPI Intent Scheme Link Redirection
         function processAppPayment(appName) {
             document.getElementById('pay-screen-select').classList.add('hidden');
             document.getElementById('pay-screen-processing').classList.remove('hidden');
@@ -1572,10 +1717,8 @@
             const payAmount = selectedPaymentItem.paymentRecord ? selectedPaymentItem.paymentRecord.onlineAmount : (selectedPaymentItem.method === 'split' ? (selectedPaymentItem.onlineAmount || 0) : selectedPaymentItem.amount);
             const upiUrl = `upi://pay?pa=${upiId}&pn=PigiBank&am=${payAmount}&tn=${encodeURIComponent(selectedPaymentItem.paymentRecord ? selectedPaymentItem.paymentRecord.note : selectedPaymentItem.note)}&cu=INR`;
 
-            // Open Mobile Native App Redirect
             window.location.href = upiUrl;
 
-            // Update local state mockup once redirect happens
             setTimeout(() => {
                 document.getElementById('pay-screen-processing').classList.add('hidden');
                 document.getElementById('pay-screen-success').classList.remove('hidden');
@@ -1597,7 +1740,6 @@
                             }
                         }
                     } else {
-                        // Fallback settlement
                         if (selectedPaymentItem.type === 'dhar') {
                             const target = dharList.find(d => d.id === selectedPaymentItem.id);
                             if (target) {
@@ -1678,7 +1820,6 @@
             const online = parseFloat(document.getElementById('salary-online-input').value) || 0;
 
             if (amt <= 0 || Math.abs((cash + online) - amt) > 0.01) {
-                playSound('error');
                 showToast("Error: Cash + Online splits must equal total salary!");
                 return;
             }
@@ -1720,7 +1861,6 @@
             document.getElementById('security-settings-modal').classList.add('hidden');
         }
 
-        // Custom Security Question Toggler
         function toggleCustomQuestionInput() {
             const selectVal = document.getElementById('recovery-question-select').value;
             const customContainer = document.getElementById('custom-question-container');
@@ -1735,7 +1875,6 @@
             document.getElementById('security-main-options').classList.add('hidden');
             document.getElementById('security-pin-form-container').classList.remove('hidden');
             
-            // Set master key display (fixed to 7001170262)
             document.getElementById('master-key-display').textContent = MASTER_RESET_KEY;
             
             const savedQIdx = localStorage.getItem('pigi_recovery_question_idx');
@@ -1770,13 +1909,11 @@
             const questionIdx = document.getElementById('recovery-question-select').value;
 
             if (pinVal.length !== 4 || isNaN(pinVal)) {
-                playSound('error');
                 showToast("Error: PIN must be exactly 4 digits!");
                 return;
             }
 
             if (!answerSetup) {
-                playSound('error');
                 showToast("Error: Please provide a recovery answer!");
                 return;
             }
@@ -1784,7 +1921,6 @@
             if (questionIdx === 'custom') {
                 const customQText = document.getElementById('custom-question-input').value.trim();
                 if (!customQText) {
-                    playSound('error');
                     showToast("Error: Write your custom question!");
                     return;
                 }
@@ -1795,7 +1931,6 @@
             localStorage.setItem('pigi_recovery_question_idx', questionIdx);
             localStorage.setItem('pigi_recovery_answer', answerSetup);
 
-            playSound('success');
             showToast("Credentials & Security Question configured!");
             hideSetPinSection();
 
@@ -1811,7 +1946,6 @@
             const savedPin = localStorage.getItem('pigi_pin');
 
             if (toggleVal && !savedPin) {
-                playSound('error');
                 showToast("Please configure your secret Credentials first!");
                 document.getElementById('lock-toggle').checked = false;
                 showSetPinSection();
@@ -1819,7 +1953,6 @@
             }
 
             localStorage.setItem('pigi_lock_enabled', toggleVal ? 'true' : 'false');
-            playSound('tick');
             showToast(toggleVal ? "PIN Lock protection on app startup activated!" : "Protection disabled.");
             openSecuritySettingsModal();
         }
